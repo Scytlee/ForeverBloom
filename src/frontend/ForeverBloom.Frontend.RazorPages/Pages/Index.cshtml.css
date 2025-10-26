@@ -1,0 +1,72 @@
+/* Horizontal scroll snap for featured products */
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+}
+.scroll-snap-inner {
+  scroll-padding-left: 1rem;
+}
+.scroll-snap-item {
+  scroll-snap-align: start;
+}
+
+/* Scroll buttons for horizontal list */
+/* Place buttons outside container edges without overlap */
+.scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  opacity: 0.95;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.scroll-btn i { font-size: 1rem; }
+.scroll-btn-prev {
+  left: -1.75rem; /* stick outside the container */
+}
+.scroll-btn-next {
+  right: -1.75rem; /* stick outside the container */
+}
+@media (min-width: 992px) {
+  .scroll-btn-prev { left: -2rem; }
+  .scroll-btn-next { right: -2rem; }
+}
+@media (hover: hover) {
+  .scroll-btn { opacity: 0.6; transition: opacity 120ms ease; }
+  .scroll-btn:hover { opacity: 1; }
+}
+
+/* Product card hover effects */
+.product-card {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+}
+
+/* Improve scrollbar aesthetics where supported */
+.scroll-snap-x {
+  scrollbar-width: thin;
+}
+.scroll-snap-x::-webkit-scrollbar {
+  height: 8px;
+}
+.scroll-snap-x::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+/* Offset hero to sit behind the fixed navbar */
+.home-hero {
+  margin-top: -4rem;
+}
+@media (min-width: 992px) {
+  .home-hero {
+    margin-top: -4.5rem;
+  }
+}

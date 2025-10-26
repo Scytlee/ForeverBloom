@@ -1,0 +1,178 @@
+# @import ./_common.http
+
+{{
+    exports.runId = Math.random().toString(36).slice(2, 8);
+}}
+
+###
+# Scenario: Slug management — product slugs and redirects
+# Note: Same behavior applies to categories (301 to canonical slug when an old slug is used).
+
+### 1) Create a category (admin)
+# @name createCategory
+# @title Create category for slug demo
+# @description Creates a category for slug management tests
+POST {{base}}/admin/categories
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Slug Demo Category {{runId}}",
+  "slug": "slug-demo-category-{{runId}}",
+  "description": "Category for slug management scenario",
+  "parentCategoryId": null
+}
+
+?? status == 201
+
+{{
+  exports.categoryId = response.parsedBody.id;
+  exports.categorySlug = response.parsedBody.slug;
+  exports.categoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 2) Create a product (admin)
+# @ref createCategory
+# @name createProduct
+# @title Create product for slug demo
+# @description Creates a product to demonstrate slug redirects
+POST {{base}}/admin/products
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Redirect Demo {{runId}}",
+  "slug": "redirect-demo-{{runId}}",
+  "categoryId": {{categoryId}},
+  "price": 9.99,
+  "publishStatus": 2
+}
+
+?? status == 201
+
+{{
+  exports.productId = response.parsedBody.id;
+  exports.productSlug = response.parsedBody.slug;
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 3) Read by slug (public)
+# @ref createProduct
+# @title Get product by initial slug
+# @description Retrieves product using its original slug
+GET {{base}}/products/{{productSlug}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 4) Update slug (admin, PATCH)
+# @ref createProduct
+# @name updateProductSlug
+# @title Update product slug
+# @description Updates the product slug with concurrency control
+{{
+  // Capture old slug for redirect testing
+  exports.oldProductSlug = productSlug;
+}}
+PATCH {{base}}/admin/products/{{productId}}
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "slug": "redirect-demo-v2-{{runId}}",
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productSlug = response.parsedBody.slug;
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 5) Old slug → expect 301 (public)
+# @ref updateProductSlug
+# @no-redirect
+# @title Test old slug redirect
+# @description Verifies that old slug redirects with 301 status
+GET {{base}}/products/{{oldProductSlug}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 301
+
+### 6) New slug (public)
+# @ref updateProductSlug
+# @title Get product by new slug
+# @description Retrieves product using the updated slug
+GET {{base}}/products/{{productSlug}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### Cleanup: Delete test resources
+
+### 7) Archive product (admin)
+# @ref updateProductSlug
+# @name archiveProduct
+# @title Archive product
+# @description Archives the product before deletion
+POST {{base}}/admin/products/{{productId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 8) Delete product (admin)
+# @ref archiveProduct
+# @title Delete product
+# @description Deletes the archived product
+DELETE {{base}}/admin/products/{{productId}}?rowVersion={{productRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
+
+### 9) Archive category (admin)
+# @ref createCategory
+# @name archiveCategory
+# @title Archive category
+# @description Archives the category before deletion
+POST {{base}}/admin/categories/{{categoryId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{categoryRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.categoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 10) Delete category (admin)
+# @ref archiveCategory
+# @title Delete category
+# @description Deletes the archived category
+DELETE {{base}}/admin/categories/{{categoryId}}?rowVersion={{categoryRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204

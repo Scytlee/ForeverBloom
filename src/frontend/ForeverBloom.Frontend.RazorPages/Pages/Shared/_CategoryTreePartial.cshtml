@@ -1,0 +1,40 @@
+@model IReadOnlyList<ForeverBloom.Api.Contracts.Catalog.Categories.Public.GetCategoryTree.CategoryTreeItem>
+
+@{
+    // Active and ancestor identification is provided via ViewData from the page
+    var activeSlug = ViewData["ActiveCategorySlug"] as string;
+    var ancestorSlugs = ViewData["AncestorSlugs"] as HashSet<string> ?? new HashSet<string>();
+    var level = (int?)ViewData["Level"] ?? 0;
+}
+
+@if (Model?.Any() == true)
+{
+    <ul class="list-unstyled m-0 category-tree">
+        @foreach (var category in Model)
+        {
+            var isActive = !string.IsNullOrEmpty(activeSlug) && string.Equals(category.Slug, activeSlug, StringComparison.OrdinalIgnoreCase);
+            var isAncestor = ancestorSlugs.Contains(category.Slug);
+            <li class="category-item py-1 @(isActive ? "active" : isAncestor ? "ancestor" : null)">
+                <div class="item" style="padding-left:@(level * 20)px">
+                    @if (isActive)
+                    {
+                        <span class="category-current" aria-current="page"><strong>@category.Name</strong></span>
+                    }
+                    else
+                    {
+                        <a class="category-link" href="/kategoria/@category.Slug">@category.Name</a>
+                    }
+                </div>
+                @if (category.Children.Any())
+                {
+                    // Pass active/ancestor context down the recursion and increase level
+                    var childViewData = new ViewDataDictionary(ViewData)
+                    {
+                        ["Level"] = level + 1
+                    };
+                    @await Html.PartialAsync("_CategoryTreePartial", category.Children, childViewData)
+                }
+            </li>
+        }
+    </ul>
+}

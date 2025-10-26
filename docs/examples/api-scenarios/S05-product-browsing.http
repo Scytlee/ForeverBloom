@@ -1,0 +1,197 @@
+# @import ./_common.http
+
+{{
+    exports.runId = Math.random().toString(36).slice(2, 8);
+}}
+
+###
+# Scenario: Product browsing — paging, filters, sorting, and validation
+
+### 1) Create a category (admin)
+# @name createCategory
+# @title Create category for browsing demo
+# @description Creates a category for product browsing tests
+POST {{base}}/admin/categories
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Browsing Demo Category {{runId}}",
+  "slug": "browsing-demo-category-{{runId}}",
+  "description": "Category for product browsing scenario",
+  "parentCategoryId": null
+}
+
+?? status == 201
+
+{{
+  exports.categoryId = response.parsedBody.id;
+  exports.categorySlug = response.parsedBody.slug;
+  exports.categoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 2) Create a product for search/filter tests (admin)
+# @ref createCategory
+# @name createProduct
+# @title Create product for browsing demo
+# @description Creates a product with searchable name
+POST {{base}}/admin/products
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Leather Belt Premium {{runId}}",
+  "slug": "leather-belt-premium-{{runId}}",
+  "categoryId": {{categoryId}},
+  "price": 49.99,
+  "publishStatus": 2,
+  "isFeatured": true
+}
+
+?? status == 201
+
+{{
+  exports.productId = response.parsedBody.id;
+  exports.productSlug = response.parsedBody.slug;
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### Browsing scenarios
+
+@pageNumber = 1
+@pageSize = 10
+@searchTerm = belt
+
+### 3) Baseline list (public)
+# @title Baseline product list
+# @description Tests basic product listing with pagination
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 4) Search term (public)
+# @title Search products by term
+# @description Tests product search functionality
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&searchTerm={{searchTerm}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 5) Category filter, include subcategories (public)
+# @ref createCategory
+# @title Filter by category with subcategories
+# @description Tests category filtering with subcategory inclusion
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&categoryId={{categoryId}}&includeSubcategories=true
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 6) Featured only (public)
+# @title Filter featured products
+# @description Tests featured products filter
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&featured=true
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 7) Sorting — Name asc (public)
+# @title Sort products by name ascending
+# @description Tests sorting by name in ascending order
+{{
+  exports.orderByEnc1 = encodeURIComponent("Name asc");
+}}
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&orderBy={{orderByEnc1}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 8) Sorting — Price desc, then Name asc (public)
+# @title Sort products by price descending, then name
+# @description Tests multi-column sorting
+{{
+  exports.orderByEnc2 = encodeURIComponent("Price desc, Name asc");
+}}
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&orderBy={{orderByEnc2}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 9) Invalid sort (expect 400 with ProblemDetails)
+# @title Invalid sort field (validation test)
+# @description Tests that invalid sort field returns 400 Bad Request
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&orderBy=Unknown desc
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 400
+
+### Cleanup: Delete test resources
+
+### 10) Archive product (admin)
+# @ref createProduct
+# @name archiveProduct
+# @title Archive product
+# @description Archives the product before deletion
+POST {{base}}/admin/products/{{productId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 11) Delete product (admin)
+# @ref archiveProduct
+# @title Delete product
+# @description Deletes the archived product
+DELETE {{base}}/admin/products/{{productId}}?rowVersion={{productRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
+
+### 12) Archive category (admin)
+# @ref createCategory
+# @name archiveCategory
+# @title Archive category
+# @description Archives the category before deletion
+POST {{base}}/admin/categories/{{categoryId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{categoryRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.categoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 13) Delete category (admin)
+# @ref archiveCategory
+# @title Delete category
+# @description Deletes the archived category
+DELETE {{base}}/admin/categories/{{categoryId}}?rowVersion={{categoryRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204

@@ -1,0 +1,109 @@
+services:
+  frontend:
+    image: ghcr.io/foreverbloomstudio/foreverbloom-frontend:int
+    container_name: foreverbloom-int-frontend
+    restart: unless-stopped
+    networks:
+    - foreverbloom-int-net
+    volumes:
+    - ./logs/frontend:/app/logs
+    - ./images:/app/wwwroot/images/uploads:ro
+    environment:
+      ApiClient__BasePath: http://backend:8080/api/v1/
+      ApiClient__ApiKeyHeaderName: ${APIKEYS_HEADERNAME}
+      ApiClient__ApiKey: ${APIKEYS_FRONTENDKEYS_0}
+      GoogleAnalytics__Enabled: false
+      ASPNETCORE_ENVIRONMENT: Integration
+      DOTNET_ENVIRONMENT: Integration
+    ports:
+    - "127.0.0.1:15000:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/alive"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  backend:
+    image: ghcr.io/foreverbloomstudio/foreverbloom-backend:int
+    container_name: foreverbloom-int-backend
+    restart: unless-stopped
+    networks:
+    - foreverbloom-int-net
+    volumes:
+    - ./logs/backend:/app/logs
+    environment:
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${DB_DATABASE_NAME};Username=${DB_APPUSER_NAME};Password=${DB_APPUSER_PASSWORD}
+      ApiKeys__HeaderName: ${APIKEYS_HEADERNAME}
+      ApiKeys__FrontendKeys__0: ${APIKEYS_FRONTENDKEYS_0}
+      ApiKeys__AdminKey: ${APIKEYS_ADMINKEY}
+      ASPNETCORE_ENVIRONMENT: Integration
+      DOTNET_ENVIRONMENT: Integration
+    ports:
+    - "127.0.0.1:15010:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      dbmanager:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/alive"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  db:
+    image: postgres:17.5-alpine
+    container_name: foreverbloom-int-db
+    restart: unless-stopped
+    networks:
+    - foreverbloom-int-net
+    volumes:
+    - foreverbloom-int-db-data:/var/lib/postgresql/data
+    - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_USER: ${DB_SUPERUSER_NAME}
+      POSTGRES_PASSWORD: ${DB_SUPERUSER_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+      MIGRATION_USER: ${DB_MIGRATIONUSER_NAME}
+      MIGRATION_PASSWORD: ${DB_MIGRATIONUSER_PASSWORD}
+    ports:
+    - "127.0.0.1:15020:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  dbmanager:
+    image: ghcr.io/foreverbloomstudio/foreverbloom-dbmanager:int
+    container_name: foreverbloom-int-dbmanager
+    restart: no
+    networks:
+    - foreverbloom-int-net
+    environment:
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=${DB_DATABASE_NAME};Username=${DB_MIGRATIONUSER_NAME};Password=${DB_MIGRATIONUSER_PASSWORD}
+      DatabaseManager__AppRole: ${DB_APPROLE_NAME}
+      DatabaseManager__AppUserName: ${DB_APPUSER_NAME}
+      DatabaseManager__AppUserPassword: ${DB_APPUSER_PASSWORD}
+      DatabaseManager__SkipInitialization: false
+      DatabaseManager__SkipMigration: false
+      DatabaseManager__SkipSeeding: false
+      ASPNETCORE_ENVIRONMENT: Integration
+      DOTNET_ENVIRONMENT: Integration
+    depends_on:
+      db:
+        condition: service_healthy
+
+networks:
+  foreverbloom-int-net:
+    driver: bridge
+
+volumes:
+  foreverbloom-int-db-data:
+    driver: local

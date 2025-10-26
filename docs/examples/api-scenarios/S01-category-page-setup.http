@@ -1,0 +1,296 @@
+# @import ./_common.http
+
+{{
+    exports.runId = Math.random().toString(36).slice(2, 8);
+}}
+
+###
+# Scenario: Category Page setup + reads (admin + public)
+# Goal: Prepare a minimal catalog and exercise the endpoints a Category page needs.
+# Routing: admin writes under /admin; public reads under /categories and /products.
+
+### 1) Create a root category (admin)
+# @name createRootCategory
+# @title Create root category
+# @description Creates a root category for Category Page demo
+POST {{base}}/admin/categories
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Demo Root Category {{runId}}",
+  "slug": "demo-root-category-{{runId}}",
+  "description": "Root category for Category Page demo",
+  "parentCategoryId": null
+}
+
+?? status == 201
+
+{{
+  exports.rootCategoryId = response.parsedBody.id;
+  exports.rootCategorySlug = response.parsedBody.slug;
+  exports.rootCategoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 2) Create a child category under the root (admin)
+# @ref createRootCategory
+# @name createChildCategory
+# @title Create child category
+# @description Creates a child category under the root
+POST {{base}}/admin/categories
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Demo Child Category {{runId}}",
+  "slug": "demo-child-category-{{runId}}",
+  "description": "Child category for Category Page demo",
+  "parentCategoryId": {{rootCategoryId}}
+}
+
+?? status == 201
+
+{{
+  exports.childCategoryId = response.parsedBody.id;
+  exports.childCategorySlug = response.parsedBody.slug;
+  exports.childCategoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 3) Create a root product (admin)
+# @ref createRootCategory
+# @name createRootProduct
+# @title Create root product
+# @description Creates a product in the root category
+POST {{base}}/admin/products
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Demo Root Product {{runId}}",
+  "slug": "demo-root-product-{{runId}}",
+  "categoryId": {{rootCategoryId}},
+  "price": 19.99,
+  "publishStatus": 2
+}
+
+?? status == 201
+
+{{
+  exports.rootProductId = response.parsedBody.id;
+  exports.rootProductSlug = response.parsedBody.slug;
+  exports.rootProductRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 4) Create a child product (admin)
+# @ref createChildCategory
+# @name createChildProduct
+# @title Create child product
+# @description Creates a product in the child category
+POST {{base}}/admin/products
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Demo Child Product {{runId}}",
+  "slug": "demo-child-product-{{runId}}",
+  "categoryId": {{childCategoryId}},
+  "price": 24.99,
+  "publishStatus": 2
+}
+
+?? status == 201
+
+{{
+  exports.childProductId = response.parsedBody.id;
+  exports.childProductSlug = response.parsedBody.slug;
+  exports.childProductRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 5) Get category tree scoped to root (public)
+# @ref createRootProduct
+# @ref createChildProduct
+# @title Get category tree
+# @description Retrieves the category tree starting from root
+GET {{base}}/categories/tree?rootCategoryId={{rootCategoryId}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 6) Get root category by slug (public)
+# @ref createRootProduct
+# @ref createChildProduct
+# @title Get root category by slug
+# @description Retrieves the root category using its slug
+GET {{base}}/categories/{{rootCategorySlug}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 7) List products under root category (public)
+# @ref createRootProduct
+# @ref createChildProduct
+# @title List products with subcategories
+# @description Typical Category page shows subtree products; includeSubcategories=true aggregates child categories
+@pageNumber = 1
+@pageSize = 10
+{{
+  exports.orderByEnc1 = encodeURIComponent("Name asc");
+}}
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&categoryId={{rootCategoryId}}&includeSubcategories=true&orderBy={{orderByEnc1}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 8) Change ordering (simulate user selecting a sort option)
+# @ref createRootProduct
+# @ref createChildProduct
+# @title List products with different sort order
+# @description Example: Price descending, then Name ascending as tiebreaker
+{{
+  exports.orderByEnc2 = encodeURIComponent("Price desc, Name asc");
+}}
+GET {{base}}/products?pageNumber={{pageNumber}}&pageSize={{pageSize}}&categoryId={{rootCategoryId}}&includeSubcategories=true&orderBy={{orderByEnc2}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### 9) Open a product details page by slug (public)
+# @ref createRootProduct
+# @ref createChildProduct
+# @title Get product by slug
+# @description Retrieves child product details by slug
+GET {{base}}/products/{{childProductSlug}}
+Accept: application/json
+X-Api-Key: {{frontendKey}}
+
+?? status == 200
+
+### Cleanup: Delete all created resources (admin)
+
+### 10) Archive root product before deletion
+# @ref createRootProduct
+# @name archiveRootProduct
+# @title Archive root product
+# @description Archives the root product before deletion
+POST {{base}}/admin/products/{{rootProductId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{rootProductRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.rootProductRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 11) Delete root product
+# @ref archiveRootProduct
+# @title Delete root product
+# @description Deletes the archived root product
+DELETE {{base}}/admin/products/{{rootProductId}}?rowVersion={{rootProductRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
+
+### 12) Archive child product before deletion
+# @ref createChildProduct
+# @name archiveChildProduct
+# @title Archive child product
+# @description Archives the child product before deletion
+POST {{base}}/admin/products/{{childProductId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{childProductRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.childProductRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 13) Delete child product
+# @ref archiveChildProduct
+# @title Delete child product
+# @description Deletes the archived child product
+DELETE {{base}}/admin/products/{{childProductId}}?rowVersion={{childProductRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
+
+### 14) Archive child category before deletion
+# @ref createChildCategory
+# @name archiveChildCategory
+# @title Archive child category
+# @description Archives the child category before deletion
+POST {{base}}/admin/categories/{{childCategoryId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{childCategoryRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.childCategoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 15) Delete child category
+# @ref archiveChildCategory
+# @title Delete child category
+# @description Deletes the archived child category
+DELETE {{base}}/admin/categories/{{childCategoryId}}?rowVersion={{childCategoryRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
+
+### 16) Archive root category before deletion
+# @ref createRootCategory
+# @name archiveRootCategory
+# @title Archive root category
+# @description Archives the root category before deletion
+POST {{base}}/admin/categories/{{rootCategoryId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{rootCategoryRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.rootCategoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 17) Delete root category
+# @ref archiveRootCategory
+# @title Delete root category
+# @description Deletes the archived root category
+DELETE {{base}}/admin/categories/{{rootCategoryId}}?rowVersion={{rootCategoryRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204

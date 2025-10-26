@@ -1,0 +1,147 @@
+# name: pipeline
+
+# on:
+#   push:
+#     branches:
+#       - '**'
+
+# concurrency:
+#   group: pipeline-${{ github.ref }}
+#   cancel-in-progress: true
+
+# permissions:
+#   contents: read
+#   packages: write
+
+# jobs:
+#   ci:
+#     name: Restore, build, and test
+#     runs-on: self-hosted
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Restore
+#         run: dotnet restore
+
+#       - name: Build
+#         run: dotnet build -c Release --no-restore
+
+#       - name: Test
+#         run: dotnet test -c Release --no-build
+
+#   publish_images:
+#     name: Publish, build images, push to registry
+#     runs-on: self-hosted
+#     needs: ci
+#     if: github.ref == 'refs/heads/main'
+#     outputs:
+#       tag_commit: ${{ steps.generate_tags.outputs.TAG_COMMIT }}
+#       registry_prefix: ${{ steps.generate_tags.outputs.REGISTRY_PREFIX }}
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Publish backend
+#         run: dotnet publish src/backend/ForeverBloom.Api/ForeverBloom.Api.csproj -c Release -o ./out/backend
+
+#       - name: Publish frontend
+#         run: dotnet publish src/frontend/ForeverBloom.Frontend.RazorPages/ForeverBloom.Frontend.RazorPages.csproj -c Release -o ./out/frontend
+
+#       - name: Publish dbmanager
+#         run: dotnet publish tools/ForeverBloom.DatabaseManager/ForeverBloom.DatabaseManager.csproj -c Release -o ./out/dbmanager
+
+#       - name: Generate tags
+#         id: generate_tags
+#         run: |
+#           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+#           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+#           REGISTRY_PREFIX="ghcr.io/${OWNER_LC}"
+#           echo "REGISTRY_PREFIX=${REGISTRY_PREFIX}" >> $GITHUB_OUTPUT
+#           echo "TAG_COMMIT=commit-${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+#       - name: Build backend image
+#         env:
+#           REGISTRY_PREFIX: ${{ steps.generate_tags.outputs.REGISTRY_PREFIX }}
+#           TAG_COMMIT: ${{ steps.generate_tags.outputs.TAG_COMMIT }}
+#         run: docker build -t ${REGISTRY_PREFIX}/foreverbloom-backend:${TAG_COMMIT} -f deploy/backend.Dockerfile .
+
+#       - name: Build frontend image
+#         env:
+#           REGISTRY_PREFIX: ${{ steps.generate_tags.outputs.REGISTRY_PREFIX }}
+#           TAG_COMMIT: ${{ steps.generate_tags.outputs.TAG_COMMIT }}
+#         run: docker build -t ${REGISTRY_PREFIX}/foreverbloom-frontend:${TAG_COMMIT} -f deploy/frontend.Dockerfile .
+
+#       - name: Build dbmanager image
+#         env:
+#           REGISTRY_PREFIX: ${{ steps.generate_tags.outputs.REGISTRY_PREFIX }}
+#           TAG_COMMIT: ${{ steps.generate_tags.outputs.TAG_COMMIT }}
+#         run: docker build -t ${REGISTRY_PREFIX}/foreverbloom-dbmanager:${TAG_COMMIT} -f deploy/dbmanager.Dockerfile .
+
+#       - name: Log in to GHCR
+#         env:
+#           DOCKER_USER: ${{ github.repository_owner }}
+#           DOCKER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+#         run: echo "$DOCKER_PASSWORD" | docker login ghcr.io -u "$DOCKER_USER" --password-stdin
+
+#       - name: Push images (:commit-<sha>)
+#         env:
+#           REGISTRY_PREFIX: ${{ steps.generate_tags.outputs.REGISTRY_PREFIX }}
+#           TAG_COMMIT: ${{ steps.generate_tags.outputs.TAG_COMMIT }}
+#         run: |
+#           for IMG in backend frontend dbmanager; do
+#             docker push ${REGISTRY_PREFIX}/foreverbloom-${IMG}:${TAG_COMMIT}
+#           done
+
+#   deploy_integration:
+#     name: Deploy to Integration environment
+#     runs-on: self-hosted
+#     needs: publish_images
+#     if: github.ref == 'refs/heads/main'
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Prepare directory
+#         env:
+#           DEPLOY_DIRECTORY: ${{ secrets.INT_DEPLOY_DIRECTORY }}
+#           GITHUB_WORKSPACE: ${{ github.workspace }}
+#         run: |
+#           # Copy compose file
+#           cp "${GITHUB_WORKSPACE}/deploy/docker-compose.int.yml" "${DEPLOY_DIRECTORY}"
+
+#           # Copy database init scripts
+#           rm -rf "${DEPLOY_DIRECTORY}/postgres-init"
+#           mkdir -p "${DEPLOY_DIRECTORY}/postgres-init"
+#           cp -r "${GITHUB_WORKSPACE}/deploy/postgres-init/." "${DEPLOY_DIRECTORY}/postgres-init/"
+
+#       - name: Log in to GHCR
+#         env:
+#           DOCKER_USER: ${{ github.repository_owner }}
+#           DOCKER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+#         run: echo "$DOCKER_PASSWORD" | docker login ghcr.io -u "$DOCKER_USER" --password-stdin
+
+#       - name: Retag images to :int and push
+#         env:
+#           REGISTRY_PREFIX: ${{ needs.publish_images.outputs.registry_prefix }}
+#           TAG_COMMIT: ${{ needs.publish_images.outputs.tag_commit }}
+#         run: |
+#           for IMG in backend frontend dbmanager; do
+#             docker pull ${REGISTRY_PREFIX}/foreverbloom-${IMG}:${TAG_COMMIT}
+#             docker tag ${REGISTRY_PREFIX}/foreverbloom-${IMG}:${TAG_COMMIT} ${REGISTRY_PREFIX}/foreverbloom-${IMG}:int
+#             docker push ${REGISTRY_PREFIX}/foreverbloom-${IMG}:int
+#           done
+
+#       - name: Deploy
+#         env:
+#           DEPLOY_DIRECTORY: ${{ secrets.INT_DEPLOY_DIRECTORY }}
+#         run: |
+#           cd ${DEPLOY_DIRECTORY}
+#           docker compose -f docker-compose.int.yml pull
+#           docker compose -f docker-compose.int.yml up -d --force-recreate --remove-orphans

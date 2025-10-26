@@ -1,0 +1,200 @@
+# @import ./_common.http
+
+{{
+    exports.runId = Math.random().toString(36).slice(2, 8);
+}}
+
+###
+# Scenario: Product management — update details and images (admin)
+
+### 1) Create a category (admin)
+# @name createCategory
+# @title Create category
+# @description Creates a category for the product management demo
+POST {{base}}/admin/categories
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Product Management Demo Category {{runId}}",
+  "slug": "product-management-demo-{{runId}}",
+  "description": "Category for product management scenario",
+  "parentCategoryId": null
+}
+
+?? status == 201
+
+{{
+  exports.categoryId = response.parsedBody.id;
+  exports.categorySlug = response.parsedBody.slug;
+  exports.categoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 2) Create a product to work with (admin)
+# @ref createCategory
+# @name createProduct
+# @title Create product
+# @description Creates a product for management operations
+POST {{base}}/admin/products
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "name": "Canvas Tote {{runId}}",
+  "slug": "canvas-tote-{{runId}}",
+  "categoryId": {{categoryId}},
+  "price": 29.50,
+  "publishStatus": 2
+}
+
+?? status == 201
+
+{{
+  exports.productId = response.parsedBody.id;
+  exports.productSlug = response.parsedBody.slug;
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 3) Update core details (admin, PATCH)
+# @ref createProduct
+# @name updateProductDetails
+# @title Update product details
+# @description Change description, price, display order, and feature flag
+PATCH {{base}}/admin/products/{{productId}}
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "fullDescription": "Durable canvas tote with inner pocket.",
+  "price": 31.00,
+  "displayOrder": 10,
+  "isFeatured": true,
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 4) Replace product images (admin, PUT)
+# @ref updateProductDetails
+# @name replaceProductImages
+# @title Replace product images
+# @description Provide a complete list; repository replaces images atomically
+PUT {{base}}/admin/products/{{productId}}/images
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "images": [
+    { "imagePath": "/images/products/tote/front.jpg",  "isPrimary": true,  "displayOrder": 1, "altText": "Front view" },
+    { "imagePath": "/images/products/tote/detail.jpg", "isPrimary": false, "displayOrder": 2, "altText": "Detail" }
+  ],
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 5) Update availability (admin, PATCH)
+# @ref replaceProductImages
+# @name updateProductStatus
+# @title Update availability status
+# @description Enums serialize as numbers (Availability: Available=1, Discontinued=5, ...)
+PATCH {{base}}/admin/products/{{productId}}
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "availability": 5,
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 6) Verify final state (admin)
+# @ref createProduct
+# @title Verify product state
+# @description Retrieves the product to verify all updates
+GET {{base}}/admin/products/{{productId}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 200
+
+### Cleanup: Archive and delete product and category (admin)
+
+### 7) Archive product (admin)
+# @ref updateProductStatus
+# @name archiveProduct
+# @title Archive product
+# @description Archives the product before deletion
+POST {{base}}/admin/products/{{productId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{productRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.productRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 8) Delete product (admin)
+# @ref archiveProduct
+# @name deleteProduct
+# @title Delete product
+# @description Deletes the archived product
+DELETE {{base}}/admin/products/{{productId}}?rowVersion={{productRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
+
+### 9) Archive category (admin)
+# @ref createCategory
+# @name archiveCategory
+# @title Archive category
+# @description Archives the category before deletion
+POST {{base}}/admin/categories/{{categoryId}}/archive
+Accept: application/json
+Content-Type: application/json
+X-Api-Key: {{adminKey}}
+
+{
+  "rowVersion": {{categoryRowVersion}}
+}
+
+?? status == 200
+
+{{
+  exports.categoryRowVersion = response.parsedBody.rowVersion;
+}}
+
+### 10) Delete category (admin)
+# @ref archiveCategory
+# @title Delete category
+# @description Deletes the archived category
+DELETE {{base}}/admin/categories/{{categoryId}}?rowVersion={{categoryRowVersion}}
+Accept: application/json
+X-Api-Key: {{adminKey}}
+
+?? status == 204
