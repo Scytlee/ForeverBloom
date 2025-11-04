@@ -16,9 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\backend\ForeverBloom.Api\ForeverBloom.Api.csproj" />
-    <ProjectReference Include="..\..\src\frontend\ForeverBloom.Frontend.RazorPages\ForeverBloom.Frontend.RazorPages.csproj" />
-    <ProjectReference Include="..\..\tools\ForeverBloom.DatabaseManager\ForeverBloom.DatabaseManager.csproj" />
+    <ProjectReference Include="..\..\src\web\ForeverBloom.WebApi\ForeverBloom.WebApi.csproj" />
+    <!-- <ProjectReference Include="..\..\src\frontend\ForeverBloom.Frontend.RazorPages\ForeverBloom.Frontend.RazorPages.csproj" /> -->
+    <ProjectReference Include="..\..\tools\ForeverBloom.Tools.DatabaseMigrator\ForeverBloom.Tools.DatabaseMigrator.csproj" />
+    <ProjectReference Include="..\..\tools\ForeverBloom.Tools.DatabaseSeeder\ForeverBloom.Tools.DatabaseSeeder.csproj" />
   </ItemGroup>
 
 </Project>

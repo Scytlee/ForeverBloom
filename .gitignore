@@ -499,3 +499,6 @@ $RECYCLE.BIN/
 
 # Image uploads (on deployed environments, uploads are mounted to a separate volume)
 src/frontend/**/wwwroot/images/uploads/*
+
+# Mysterious $null file
+$null

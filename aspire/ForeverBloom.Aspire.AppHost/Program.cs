@@ -1,39 +1,47 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-const string databaseName = "foreverbloom";
 const int postgresPort = 65432;
 
-var dbMigrationUserName = builder.AddParameter("dbMigrationUserName", secret: true);
-var dbMigrationUserPassword = builder.AddParameter("dbMigrationUserPassword", secret: true);
-var dbAppRoleName = builder.AddParameter("dbAppRoleName", secret: true);
-var dbAppUserName = builder.AddParameter("dbAppUserName", secret: true);
-var dbAppUserPassword = builder.AddParameter("dbAppUserPassword", secret: true);
+var foreverBloomDatabaseName = builder.AddParameter("foreverBloomDatabaseName", secret: true);
+var foreverBloomMigratorUsername = builder.AddParameter("foreverBloomMigratorUsername", secret: true);
+var foreverBloomMigratorPassword = builder.AddParameter("foreverBloomMigratorPassword", secret: true);
+var foreverBloomUserUsername = builder.AddParameter("foreverBloomUserUsername", secret: true);
+var foreverBloomUserPassword = builder.AddParameter("foreverBloomUserPassword", secret: true);
 
 var db = builder.AddPostgres("db", port: postgresPort)
-  .WithImage("postgres:17.5-alpine")
-  .WithInitBindMount("../../deploy/postgres-init")
-  .WithEnvironment("POSTGRES_DB", databaseName)
-  .WithEnvironment("MIGRATION_USER", dbMigrationUserName)
-  .WithEnvironment("MIGRATION_PASSWORD", dbMigrationUserPassword)
-  .AddDatabase(databaseName);
+    .WithImage("postgres:17.5-alpine")
+    .WithInitBindMount("../../deploy/postgres-init")
+    .WithEnvironment("FOREVERBLOOM_DATABASE_NAME", foreverBloomDatabaseName)
+    .WithEnvironment("FOREVERBLOOM_MIGRATOR_USERNAME", foreverBloomMigratorUsername)
+    .WithEnvironment("FOREVERBLOOM_MIGRATOR_PASSWORD", foreverBloomMigratorPassword)
+    .WithEnvironment("FOREVERBLOOM_USER_USERNAME", foreverBloomUserUsername)
+    .WithEnvironment("FOREVERBLOOM_USER_PASSWORD", foreverBloomUserPassword);
 
-var dbManagerPostgresConnectionString = $"Host=localhost;Port={postgresPort.ToString()};Database={databaseName};Username={dbMigrationUserName.Resource.Value};Password={dbMigrationUserPassword.Resource.Value}";
-var dbManager = builder.AddProject<Projects.ForeverBloom_DatabaseManager>("dbmanager")
-  .WithEnvironment("ConnectionStrings__Postgres", dbManagerPostgresConnectionString)
-  .WithEnvironment("DatabaseManager__AppRole", dbAppRoleName)
-  .WithEnvironment("DatabaseManager__AppUserName", dbAppUserName)
-  .WithEnvironment("DatabaseManager__AppUserPassword", dbAppUserPassword)
-  .WaitFor(db);
+var foreverBloomMigratorConnectionString = $"Host=localhost;Port={postgresPort.ToString()};Database={foreverBloomDatabaseName.Resource.Value};Username={foreverBloomMigratorUsername.Resource.Value};Password={foreverBloomMigratorPassword.Resource.Value}";
+var dbMigrator = builder.AddProject<Projects.ForeverBloom_Tools_DatabaseMigrator>("dbmigrator")
+    .WithEnvironment("ConnectionStrings__Postgres", foreverBloomMigratorConnectionString)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
+    .WaitFor(db);
 
-var backendPostgresConnectionString = $"Host=localhost;Port={postgresPort.ToString()};Database={databaseName};Username={dbAppUserName.Resource.Value};Password={dbAppUserPassword.Resource.Value}";
-var backend = builder.AddProject<Projects.ForeverBloom_Api>("backend")
-  .WithHttpsHealthCheck("/health")
-  .WithEnvironment("ConnectionStrings__Postgres", backendPostgresConnectionString)
-  .WaitForCompletion(dbManager);
+var foreverBloomUserConnectionString = $"Host=localhost;Port={postgresPort.ToString()};Database={foreverBloomDatabaseName.Resource.Value};Username={foreverBloomUserUsername.Resource.Value};Password={foreverBloomUserPassword.Resource.Value}";
+var dbSeeder = builder.AddProject<Projects.ForeverBloom_Tools_DatabaseSeeder>("dbseeder")
+    .WithEnvironment("ConnectionStrings__Postgres", foreverBloomUserConnectionString)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
+    .WaitFor(db)
+    .WaitForCompletion(dbMigrator);
 
-builder.AddProject<Projects.ForeverBloom_Frontend_RazorPages>("frontend")
-  .WithExternalHttpEndpoints()
-  .WithHttpsHealthCheck("/health")
-  .WaitFor(backend);
+var backend = builder.AddProject<Projects.ForeverBloom_WebApi>("backend")
+    .WithHttpsHealthCheck("/alive")
+    .WithEnvironment("ConnectionStrings__Postgres", foreverBloomUserConnectionString)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    .WithEnvironment("DOTNET_ENVIRONMENT", "Development")
+    .WaitForCompletion(dbSeeder);
+
+// builder.AddProject<Projects.ForeverBloom_Frontend_RazorPages>("frontend")
+//   .WithExternalHttpEndpoints()
+//   .WithHttpsHealthCheck("/health")
+//   .WaitFor(backend);
 
 builder.Build().Run();
