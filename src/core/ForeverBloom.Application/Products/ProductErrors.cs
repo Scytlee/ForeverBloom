@@ -89,4 +89,22 @@ public static class ProductErrors
         public string Code => "Product.DuplicateImageIds";
         public string Message => $"The following image IDs are duplicated: {string.Join(", ", DuplicateIds)}.";
     }
+
+    /// <summary>
+    /// Error indicating a product cannot be deleted because it is not archived.
+    /// </summary>
+    public sealed record CannotDeleteNotArchived(long ProductId) : IError
+    {
+        public string Code => "Product.CannotDeleteNotArchived";
+        public string Message => $"Product with ID {ProductId} must be archived before it can be deleted.";
+    }
+
+    /// <summary>
+    /// Error indicating a product cannot be deleted because insufficient time has passed since archival.
+    /// </summary>
+    public sealed record CannotDeleteTooSoon(long ProductId, DateTimeOffset ArchivedAt, DateTimeOffset EligibleAt) : IError
+    {
+        public string Code => "Product.CannotDeleteTooSoon";
+        public string Message => $"Product with ID {ProductId} was archived at {ArchivedAt:u} and can be deleted after {EligibleAt:u}.";
+    }
 }

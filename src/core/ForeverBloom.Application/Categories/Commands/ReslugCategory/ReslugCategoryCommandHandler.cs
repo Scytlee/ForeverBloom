@@ -13,8 +13,6 @@ namespace ForeverBloom.Application.Categories.Commands.ReslugCategory;
 internal sealed class ReslugCategoryCommandHandler
     : ICommandHandler<ReslugCategoryCommand, ReslugCategoryResult>
 {
-    private const int MaxDescendantsToMove = 100;
-
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICategoryRepository _categoryRepository;
     private readonly ISlugRegistrationService _slugRegistrationService;
@@ -88,15 +86,14 @@ internal sealed class ReslugCategoryCommandHandler
         var descendants = await _categoryRepository.GetDescendantsAsync(
             category.Path,
             category.Id,
-            MaxDescendantsToMove,
+            Category.DescendantLimitOnUpdate,
             cancellationToken);
 
-        if (descendants.Count > MaxDescendantsToMove)
+        if (descendants.Count > Category.DescendantLimitOnUpdate)
         {
             return Result<ReslugCategoryResult>.Failure(
-                new CategoryErrors.TooManyDescendantsToMove(
-                    command.CategoryId,
-                    MaxDescendantsToMove));
+                new CategoryErrors.TooManyDescendants(
+                    command.CategoryId));
         }
 
         // Domain service handles slug change and descendant rebasing

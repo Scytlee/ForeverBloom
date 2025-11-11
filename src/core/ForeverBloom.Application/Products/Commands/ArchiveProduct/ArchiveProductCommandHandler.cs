@@ -28,8 +28,8 @@ internal sealed class ArchiveProductCommandHandler
         ArchiveProductCommand command,
         CancellationToken cancellationToken)
     {
-        // Retrieve product by ID
-        var product = await _productRepository.GetByIdAsync(command.ProductId, cancellationToken);
+        // Retrieve product by ID, including archived
+        var product = await _productRepository.GetByIdIncludingArchivedAsync(command.ProductId, cancellationToken);
         if (product is null)
         {
             return Result<ArchiveProductResult>.Failure(

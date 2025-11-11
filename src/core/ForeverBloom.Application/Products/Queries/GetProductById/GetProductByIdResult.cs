@@ -10,7 +10,6 @@ public sealed class GetProductByIdResult
     public string Slug { get; set; } = null!;
     public decimal? Price { get; set; }
     public long CategoryId { get; set; }
-    public int DisplayOrder { get; set; }
     public bool IsFeatured { get; set; }
     public int PublishStatusCode { get; set; }
     public int AvailabilityStatusCode { get; set; }

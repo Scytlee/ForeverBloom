@@ -54,6 +54,19 @@ public sealed record Image
         // Value is guaranteed non-null here: FromValidation only calls factory when errors list is empty
         return Result<Image>.FromValidation(errors, () => new Image(urlPathResult.Value!, altText));
     }
+
+    /// <summary>
+    /// Equality is based on the source path only, as the same image file may have different
+    /// context-specific alt text in different scenarios.
+    /// </summary>
+    public bool Equals(Image? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Source.Equals(other.Source);
+    }
+
+    public override int GetHashCode() => Source.GetHashCode();
 }
 
 public static class ImageErrors

@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using ForeverBloom.Application.Abstractions.Validation;
 
 namespace ForeverBloom.Application.Pagination;

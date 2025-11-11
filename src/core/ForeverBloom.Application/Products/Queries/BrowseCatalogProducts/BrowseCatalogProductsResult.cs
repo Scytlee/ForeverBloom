@@ -1,4 +1,4 @@
-﻿using ForeverBloom.Application.Pagination;
+using ForeverBloom.Application.Pagination;
 
 namespace ForeverBloom.Application.Products.Queries.BrowseCatalogProducts;
 

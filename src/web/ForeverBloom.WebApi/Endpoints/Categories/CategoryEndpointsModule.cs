@@ -1,8 +1,15 @@
 using ForeverBloom.WebApi.Authentication;
+using ForeverBloom.WebApi.Endpoints.Categories.ArchiveCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.BrowseCatalogCategoryTree;
 using ForeverBloom.WebApi.Endpoints.Categories.CreateCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.DeleteCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.GetCategoriesSitemapData;
 using ForeverBloom.WebApi.Endpoints.Categories.GetCategoryById;
+using ForeverBloom.WebApi.Endpoints.Categories.GetCategoryBySlug;
+using ForeverBloom.WebApi.Endpoints.Categories.ListCategories;
 using ForeverBloom.WebApi.Endpoints.Categories.ReparentCategory;
 using ForeverBloom.WebApi.Endpoints.Categories.ReslugCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.RestoreCategory;
 using ForeverBloom.WebApi.Endpoints.Categories.UpdateCategory;
 
 namespace ForeverBloom.WebApi.Endpoints.Categories;
@@ -17,11 +24,21 @@ public static class CategoryEndpointsModule
     /// </summary>
     public static class Names
     {
+        // Public
+        public const string BrowseCatalogCategoryTree = "BrowseCatalogCategoryTree";
+        public const string GetCategoryBySlug = "GetCategoryBySlug";
+        public const string GetCategoriesSitemapData = "GetCategoriesSitemapData";
+
+        // Admin
         public const string GetCategoryById = "GetCategoryById";
         public const string CreateCategory = "CreateCategory";
         public const string UpdateCategory = "UpdateCategory";
         public const string ReparentCategory = "ReparentCategory";
         public const string ReslugCategory = "ReslugCategory";
+        public const string ArchiveCategory = "ArchiveCategory";
+        public const string RestoreCategory = "RestoreCategory";
+        public const string DeleteCategory = "DeleteCategory";
+        public const string ListCategories = "ListCategories";
     }
 
     /// <summary>
@@ -30,6 +47,7 @@ public static class CategoryEndpointsModule
     public static class Tags
     {
         public const string Categories = "Categories";
+        public const string Public = "Public";
         public const string Admin = "Admin";
     }
 
@@ -47,6 +65,12 @@ public static class CategoryEndpointsModule
     /// </summary>
     public static IEndpointRouteBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
+        var publicEndpointsGroup = app.MapGroup("/categories")
+            .WithTags(Tags.Categories, Tags.Public);
+        publicEndpointsGroup.MapBrowseCatalogCategoryTreeEndpoint();
+        publicEndpointsGroup.MapGetCategoryBySlugEndpoint();
+        publicEndpointsGroup.MapGetCategoriesSitemapDataEndpoint();
+
         var adminEndpointsGroup = app.MapGroup("/admin/categories")
             .WithTags(Tags.Categories, Tags.Admin)
             .RequireAuthorization(ApiKeyAuthenticationDefaults.AdminAccessPolicyName);
@@ -55,6 +79,10 @@ public static class CategoryEndpointsModule
         adminEndpointsGroup.MapUpdateCategoryEndpoint();
         adminEndpointsGroup.MapReparentCategoryEndpoint();
         adminEndpointsGroup.MapReslugCategoryEndpoint();
+        adminEndpointsGroup.MapArchiveCategoryEndpoint();
+        adminEndpointsGroup.MapRestoreCategoryEndpoint();
+        adminEndpointsGroup.MapDeleteCategoryEndpoint();
+        adminEndpointsGroup.MapListCategoriesEndpoint();
 
         return app;
     }

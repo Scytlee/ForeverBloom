@@ -157,12 +157,6 @@ namespace ForeverBloom.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<int>("DisplayOrder")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("display_order");
-
                     b.Property<string>("FullDescription")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
@@ -216,8 +210,8 @@ namespace ForeverBloom.Persistence.Migrations
                     b.HasIndex("CategoryId")
                         .HasDatabaseName("ix_products_category_id");
 
-                    b.HasIndex("CategoryId", "PublishStatus", "DisplayOrder")
-                        .HasDatabaseName("ix_products_category_id_publish_status_display_order");
+                    b.HasIndex("CategoryId", "PublishStatus")
+                        .HasDatabaseName("ix_products_category_id_publish_status");
 
                     b.ToTable("products", null, t =>
                         {

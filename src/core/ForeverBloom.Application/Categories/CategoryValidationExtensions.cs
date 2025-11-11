@@ -18,7 +18,22 @@ internal static class CategoryValidationExtensions
         {
             if (value <= 0)
             {
-                context.AddCategoryIdInvalidFailure(new CategoryErrors.CategoryIdInvalid(value), value);
+                context.AddCategoryIdInvalidFailure(new CategoryErrors.CategoryIdInvalid(value));
+            }
+        });
+    }
+
+    /// <summary>
+    /// Validates that a category ID is valid (greater than 0).
+    /// </summary>
+    internal static IRuleBuilderOptionsConditions<T, long?> MustBeValidCategoryId<T>(
+        this IRuleBuilder<T, long?> ruleBuilder)
+    {
+        return ruleBuilder.Custom((value, context) =>
+        {
+            if (value <= 0)
+            {
+                context.AddCategoryIdInvalidFailure(new CategoryErrors.CategoryIdInvalid(value.Value));
             }
         });
     }
@@ -26,9 +41,9 @@ internal static class CategoryValidationExtensions
     /// <summary>
     /// Adds a validation failure for an invalid category ID.
     /// </summary>
-    private static void AddCategoryIdInvalidFailure<T>(this ValidationContext<T> context, CategoryErrors.CategoryIdInvalid error, long attemptedValue)
+    private static void AddCategoryIdInvalidFailure<T>(this ValidationContext<T> context, CategoryErrors.CategoryIdInvalid error)
     {
-        var failure = ValidationExtensions.CreateFailureFromError(context, error, attemptedValue);
+        var failure = ValidationExtensions.CreateFailureFromError(context, error, error.AttemptedId);
         context.AddFailure(failure);
     }
 

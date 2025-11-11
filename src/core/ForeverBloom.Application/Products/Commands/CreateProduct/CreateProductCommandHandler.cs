@@ -73,7 +73,6 @@ internal sealed class CreateProductCommandHandler : ICommandHandler<CreateProduc
             slug: valueObjects.Slug,
             categoryId: command.CategoryId,
             price: valueObjects.Price,
-            displayOrder: command.DisplayOrder,
             isFeatured: command.IsFeatured,
             availabilityStatus: command.AvailabilityStatus,
             timestamp: _timeProvider.UtcNow,

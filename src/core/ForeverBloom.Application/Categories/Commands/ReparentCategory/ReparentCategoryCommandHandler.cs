@@ -11,8 +11,6 @@ namespace ForeverBloom.Application.Categories.Commands.ReparentCategory;
 internal sealed class ReparentCategoryCommandHandler
     : ICommandHandler<ReparentCategoryCommand, ReparentCategoryResult>
 {
-    private const int MaxDescendantsToMove = 100;
-
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICategoryRepository _categoryRepository;
     private readonly CategoryHierarchyService _hierarchyService;
@@ -91,15 +89,14 @@ internal sealed class ReparentCategoryCommandHandler
         var descendants = await _categoryRepository.GetDescendantsAsync(
             category.Path,
             category.Id,
-            MaxDescendantsToMove,
+            Category.DescendantLimitOnUpdate,
             cancellationToken);
 
-        if (descendants.Count > MaxDescendantsToMove)
+        if (descendants.Count > Category.DescendantLimitOnUpdate)
         {
             return Result<ReparentCategoryResult>.Failure(
-                new CategoryErrors.TooManyDescendantsToMove(
-                    command.CategoryId,
-                    MaxDescendantsToMove));
+                new CategoryErrors.TooManyDescendants(
+                    command.CategoryId));
         }
 
         // Domain service handles everything, including validation

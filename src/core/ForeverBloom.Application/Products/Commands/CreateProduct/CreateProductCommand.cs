@@ -14,7 +14,6 @@ public sealed record CreateProductCommand(
     string Slug,
     long CategoryId,
     decimal? Price,
-    int DisplayOrder,
     bool IsFeatured,
     ProductAvailabilityStatus AvailabilityStatus,
     IReadOnlyCollection<CreateProductCommandImage>? Images

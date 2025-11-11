@@ -16,9 +16,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.CurrentSlug)
             .IsRequired();
 
-        builder.Property(p => p.DisplayOrder)
-            .HasDefaultValue(0);
-
         builder.Property(p => p.PublishStatus)
             .HasDefaultValue(PublishStatus.Draft);
 
@@ -67,6 +64,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasIndex(p => p.CategoryId);
 
-        builder.HasIndex(p => new { p.CategoryId, p.PublishStatus, p.DisplayOrder });
+        builder.HasIndex(p => new { p.CategoryId, p.PublishStatus });
     }
 }

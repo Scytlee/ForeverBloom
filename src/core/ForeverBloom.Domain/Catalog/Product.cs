@@ -9,6 +9,7 @@ public sealed class Product : Entity, ISoftDeleteable
 {
     // Constants
     public const int MaxImageCount = 20;
+    public const int DeletionGracePeriodInHours = 24;
 
     // Properties
     public ProductName Name { get; private set; } = null!;
@@ -18,7 +19,6 @@ public sealed class Product : Entity, ISoftDeleteable
     public Slug CurrentSlug { get; private set; } = null!;
     public long CategoryId { get; private set; }
     public Money? Price { get; private set; } // Nullable for negotiable, made to order, or unknown pricing
-    public int DisplayOrder { get; private set; }
     public bool IsFeatured { get; private set; }
     public PublishStatus PublishStatus { get; private set; } = PublishStatus.Draft;
     public ProductAvailabilityStatus Availability { get; private set; } = ProductAvailabilityStatus.ComingSoon;
@@ -41,10 +41,9 @@ public sealed class Product : Entity, ISoftDeleteable
         Slug slug,
         long categoryId,
         Money? price,
-        int displayOrder,
         bool isFeatured,
         ProductAvailabilityStatus availability,
-        ICollection<ProductImage>? images,
+        List<ProductImage> images,
         DateTimeOffset timestamp) : base(timestamp)
     {
         Name = name;
@@ -54,10 +53,9 @@ public sealed class Product : Entity, ISoftDeleteable
         CurrentSlug = slug;
         CategoryId = categoryId;
         Price = price;
-        DisplayOrder = displayOrder;
         IsFeatured = isFeatured;
         Availability = availability;
-        Images = images ?? new List<ProductImage>();
+        Images = images;
     }
 
     /// <summary>
@@ -71,7 +69,6 @@ public sealed class Product : Entity, ISoftDeleteable
         Slug slug,
         long categoryId,
         Money? price,
-        int displayOrder,
         bool isFeatured,
         ProductAvailabilityStatus availabilityStatus,
         DateTimeOffset timestamp,
@@ -103,10 +100,9 @@ public sealed class Product : Entity, ISoftDeleteable
                 slug,
                 categoryId,
                 price,
-                displayOrder,
                 isFeatured,
                 availabilityStatus,
-                images,
+                images?.ToList() ?? [],
                 timestamp));
     }
 
@@ -124,7 +120,6 @@ public sealed class Product : Entity, ISoftDeleteable
         Optional<MetaDescription?> metaDescription,
         Optional<long> categoryId,
         Optional<Money?> price,
-        Optional<int> displayOrder,
         Optional<bool> isFeatured,
         Optional<ProductAvailabilityStatus> availability,
         Optional<PublishStatus> publishStatus,
@@ -137,7 +132,6 @@ public sealed class Product : Entity, ISoftDeleteable
                          (metaDescription.IsSet && MetaDescription != metaDescription.Value) ||
                          (categoryId.IsSet && CategoryId != categoryId.Value) ||
                          (price.IsSet && Price != price.Value) ||
-                         (displayOrder.IsSet && DisplayOrder != displayOrder.Value) ||
                          (isFeatured.IsSet && IsFeatured != isFeatured.Value) ||
                          (availability.IsSet && Availability != availability.Value) ||
                          (publishStatus.IsSet && PublishStatus != publishStatus.Value);
@@ -184,9 +178,6 @@ public sealed class Product : Entity, ISoftDeleteable
 
         if (price.IsSet)
             Price = price.Value;
-
-        if (displayOrder.IsSet)
-            DisplayOrder = displayOrder.Value;
 
         if (isFeatured.IsSet)
             IsFeatured = isFeatured.Value;
@@ -310,6 +301,19 @@ public sealed class Product : Entity, ISoftDeleteable
         }
 
         DeletedAt = timestamp;
+
+        return Result<bool>.Success(true);
+    }
+
+    public Result<bool> Restore()
+    {
+        // No-op: already restored
+        if (DeletedAt is null)
+        {
+            return Result<bool>.Success(false);
+        }
+
+        DeletedAt = null;
 
         return Result<bool>.Success(true);
     }

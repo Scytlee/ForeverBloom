@@ -40,26 +40,17 @@ public sealed class GetProductByIdQueryHandler
         long productId,
         CancellationToken cancellationToken)
     {
-        // Product must be visible, which means that:
-        // - it cannot be soft-deleted
-        // - its category cannot have a soft-deleted ancestor, including itself
+        // Product cannot be soft-deleted
         const string productSql = """
             SELECT
                 p.id, p.name, p.seo_title, p.full_description, p.meta_description,
-                p.current_slug AS slug, p.price, p.category_id, p.display_order,
-                p.is_featured, p.publish_status AS publish_status_code,
-                p.availability AS availability_status_code, p.created_at,
-                p.updated_at, p.deleted_at, p.xmin AS row_version
+                p.current_slug AS slug, p.price, p.category_id, p.is_featured,
+                p.publish_status AS publish_status_code, p.availability AS availability_status_code,
+                p.created_at, p.updated_at, p.deleted_at, p.xmin AS row_version
             FROM products p
             JOIN categories c ON p.category_id = c.id
             WHERE p.deleted_at IS NULL
               AND p.id = @ProductId
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM categories ancestor
-                  WHERE ancestor.path @> c.path
-                    AND ancestor.deleted_at IS NOT NULL
-              )
             """;
 
         return await connection.QuerySingleOrDefaultAsync<GetProductByIdResult>(
@@ -71,7 +62,7 @@ public sealed class GetProductByIdQueryHandler
         long productId,
         CancellationToken cancellationToken)
     {
-        // This query assumes that the product is visible,
+        // This query assumes that the product is not soft-deleted,
         // therefore this query does not check it again.
         const string imagesSql = """
             SELECT id, image_path, is_primary, display_order, image_alt_text AS alt_text

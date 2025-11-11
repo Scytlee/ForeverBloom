@@ -9,7 +9,8 @@ public sealed class BrowseCatalogProductsResultItem
     public string? MetaDescription { get; set; }
     public long CategoryId { get; set; }
     public string CategoryName { get; set; } = null!;
-    public string? PrimaryImagePath { get; set; }
+    public string? ImageSource { get; set; }
+    public string? ImageAltText { get; set; }
     public int AvailabilityStatusCode { get; set; }
     public bool IsFeatured { get; set; }
 }

@@ -1,0 +1,25 @@
+/* Thumbnail-specific sizing (shared h-scroll styles live in site.css) */
+.thumb-btn { flex: 0 0 auto; }
+.thumb-img { height: 72px; width: auto; object-fit: cover; display: block; padding: 0; }
+.thumb-btn[aria-current="true"] .thumb-img { outline: 2px solid var(--bs-primary); outline-offset: 1px; }
+
+/* No-image fallback: same mechanism as product cards */
+.no-image-fallback {
+  position: relative;
+  width: 100%;
+  padding-top: 62.5%; /* 16:10 ratio to mirror cards */
+}
+.no-image-fallback img {
+  position: absolute;
+  inset: 0;
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+  margin: auto; /* centers within inset box */
+}
+@media (max-width: 575.98px) {
+  .no-image-fallback img { width: 65%; height: 65%; }
+}
+@media (max-width: 575.98px) {
+  .thumb-img { height: 60px; width: auto; }
+}

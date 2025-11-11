@@ -13,7 +13,6 @@ public sealed record UpdateProductCommand(
     Optional<string?> MetaDescription,
     Optional<long> CategoryId,
     Optional<decimal?> Price,
-    Optional<int> DisplayOrder,
     Optional<bool> IsFeatured,
     Optional<ProductAvailabilityStatus> Availability,
     Optional<PublishStatus> PublishStatus) : ICommand<UpdateProductResult>;

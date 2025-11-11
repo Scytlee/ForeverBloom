@@ -4,21 +4,21 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/aspire/">
-    <Project Path="aspire\ForeverBloom.Aspire.AppHost\ForeverBloom.Aspire.AppHost.csproj">
+  <Folder Name="/src/" />
+  <Folder Name="/src/aspire/">
+    <Project Path="src\aspire\ForeverBloom.Aspire.AppHost\ForeverBloom.Aspire.AppHost.csproj">
       <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
       <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
       <Configuration Solution="Release|x64" Project="Release|Any CPU" />
       <Configuration Solution="Release|x86" Project="Release|Any CPU" />
     </Project>
-    <Project Path="aspire\ForeverBloom.Aspire.ServiceDefaults\ForeverBloom.Aspire.ServiceDefaults.csproj">
+    <Project Path="src\aspire\ForeverBloom.Aspire.ServiceDefaults\ForeverBloom.Aspire.ServiceDefaults.csproj">
       <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
       <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
       <Configuration Solution="Release|x64" Project="Release|Any CPU" />
       <Configuration Solution="Release|x86" Project="Release|Any CPU" />
     </Project>
   </Folder>
-  <Folder Name="/src/" />
   <Folder Name="/src/core/">
     <Project Path="src/core/ForeverBloom.Application/ForeverBloom.Application.csproj" />
     <Project Path="src/core/ForeverBloom.Domain/ForeverBloom.Domain.csproj" />
@@ -28,16 +28,28 @@
     <Project Path="src/infrastructure/ForeverBloom.Infrastructure/ForeverBloom.Infrastructure.csproj" />
     <Project Path="src/infrastructure/ForeverBloom.Persistence/ForeverBloom.Persistence.csproj" />
   </Folder>
-  <Folder Name="/src/web/">
-    <Project Path="src/web/ForeverBloom.WebApi/ForeverBloom.WebApi.csproj" />
-  </Folder>
-  <Folder Name="/tools/">
-    <Project Path="tools/ForeverBloom.Tools.DatabaseSeeder/ForeverBloom.Tools.DatabaseSeeder.csproj" />
-    <Project Path="tools\ForeverBloom.Tools.DatabaseMigrator\ForeverBloom.Tools.DatabaseMigrator.csproj">
+  <Folder Name="/src/tools/">
+    <Project Path="src\tools/ForeverBloom.Tools.DatabaseSeeder/ForeverBloom.Tools.DatabaseSeeder.csproj" />
+    <Project Path="src\tools\ForeverBloom.Tools.DatabaseMigrator\ForeverBloom.Tools.DatabaseMigrator.csproj">
       <Configuration Solution="Debug|x64" Project="Debug|Any CPU" />
       <Configuration Solution="Debug|x86" Project="Debug|Any CPU" />
       <Configuration Solution="Release|x64" Project="Release|Any CPU" />
       <Configuration Solution="Release|x86" Project="Release|Any CPU" />
     </Project>
+  </Folder>
+  <Folder Name="/src/web/">
+    <Project Path="src/web/ForeverBloom.WebApi.Client/ForeverBloom.WebApi.Client.csproj" />
+    <Project Path="src/web/ForeverBloom.WebApi/ForeverBloom.WebApi.csproj" />
+    <Project Path="src/web/ForeverBloom.WebUI.RazorPages/ForeverBloom.WebUI.RazorPages.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/core/">
+    <Project Path="tests/core/ForeverBloom.Application.IntegrationTests/ForeverBloom.Application.IntegrationTests.csproj" />
+    <Project Path="tests/core/ForeverBloom.Domain.UnitTests/ForeverBloom.Domain.UnitTests.csproj" />
+    <Project Path="tests/core/ForeverBloom.SharedKernel.UnitTests/ForeverBloom.SharedKernel.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/shared/">
+    <Project Path="tests/shared/ForeverBloom.Testing.Integration/ForeverBloom.Testing.Integration.csproj" />
+    <Project Path="tests/shared/ForeverBloom.Testing/ForeverBloom.Testing.csproj" />
   </Folder>
 </Solution>

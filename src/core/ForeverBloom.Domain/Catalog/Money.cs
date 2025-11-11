@@ -25,9 +25,9 @@ public sealed record Money
     {
         var errors = new List<IError>();
 
-        if (value <= 0)
+        if (value < 0)
         {
-            errors.Add(new MoneyErrors.NotPositive(value));
+            errors.Add(new MoneyErrors.Negative(value));
         }
 
         if (value != decimal.Round(value, RequiredDecimalPlaces))
@@ -46,16 +46,16 @@ public sealed record Money
 
 public static class MoneyErrors
 {
-    public sealed record NotPositive(decimal AttemptedValue) : IError
+    public sealed record Negative(decimal AttemptedValue) : IError
     {
-        public string Code => "Money.NotPositive";
-        public string Message => "Money value must be positive";
+        public string Code => "Money.Negative";
+        public string Message => "Money value cannot be negative";
     }
 
     public sealed record InvalidPrecision(decimal AttemptedValue) : IError
     {
         public string Code => "Money.InvalidPrecision";
-        public string Message => $"Money value must have exactly {RequiredDecimalPlaces} decimal places";
-        public static int RequiredDecimalPlaces => Money.RequiredDecimalPlaces;
+        public string Message => $"Money value must be representable with {RequiredDecimalPlaces} decimal places without losing precision";
+        public int RequiredDecimalPlaces => Money.RequiredDecimalPlaces;
     }
 }

@@ -108,8 +108,12 @@ public sealed class CategoryHierarchyService
 
         var newBase = category.Path;
 
-        RebaseCategories(oldBase, newBase, descendants, timestamp);
-        return Result<bool>.Success(true);
+        var rebaseResult = RebaseCategories(oldBase, newBase, descendants, timestamp);
+        return rebaseResult.IsSuccess switch
+        {
+            true => Result<bool>.Success(true),
+            false => rebaseResult
+        };
     }
 
     /// <summary>
@@ -151,7 +155,81 @@ public sealed class CategoryHierarchyService
 
         var newBase = category.Path;
 
-        RebaseCategories(oldBase, newBase, descendants, timestamp);
+        var rebaseResult = RebaseCategories(oldBase, newBase, descendants, timestamp);
+        return rebaseResult.IsSuccess switch
+        {
+            true => Result<bool>.Success(true),
+            false => rebaseResult
+        };
+    }
+
+    /// <summary>
+    /// Archives a category and all its descendants by setting their DeletedAt timestamps.
+    /// </summary>
+    /// <param name="category">The category to archive.</param>
+    /// <param name="descendants">The descendants of the category being archived.</param>
+    /// <param name="timestamp">The timestamp of this archival operation.</param>
+    /// <returns>
+    /// A Result containing <c>true</c> if the subject category was archived (regardless of descendant outcomes),
+    /// <c>false</c> if the subject category is already archived (no-op),
+    /// or a failure with a domain error.
+    /// </returns>
+    public Result<bool> ArchiveCategoryAndDescendants(
+        Category category,
+        IReadOnlyList<Category> descendants,
+        DateTimeOffset timestamp)
+    {
+        var archiveResult = category.Archive(timestamp);
+        if (archiveResult.IsFailure)
+        {
+            return Result<bool>.Failure(archiveResult.Error);
+        }
+
+        // No-op: category is already archived
+        if (archiveResult.Value is false)
+        {
+            return Result<bool>.Success(false);
+        }
+
+        foreach (var descendant in descendants)
+        {
+            descendant.Archive(timestamp);
+        }
+
+        return Result<bool>.Success(true);
+    }
+
+    /// <summary>
+    /// Restores a category and all its descendants by clearing their DeletedAt timestamps.
+    /// </summary>
+    /// <param name="category">The category to restore.</param>
+    /// <param name="descendants">The descendants of the category being restored.</param>
+    /// <returns>
+    /// A Result containing <c>true</c> if the subject category was restored (regardless of descendant outcomes),
+    /// <c>false</c> if the subject category is already restored (no-op),
+    /// or a failure with a domain error.
+    /// </returns>
+    public Result<bool> RestoreCategoryAndDescendants(
+        Category category,
+        IReadOnlyList<Category> descendants)
+    {
+        var restoreResult = category.Restore();
+        if (restoreResult.IsFailure)
+        {
+            return Result<bool>.Failure(restoreResult.Error);
+        }
+
+        // No-op: category is already restored
+        if (restoreResult.Value is false)
+        {
+            return Result<bool>.Success(false);
+        }
+
+        foreach (var descendant in descendants)
+        {
+            descendant.Restore();
+        }
+
         return Result<bool>.Success(true);
     }
 }

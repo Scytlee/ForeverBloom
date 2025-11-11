@@ -1,14 +1,14 @@
+using System.Text;
 using Dapper;
 using ForeverBloom.Application.Abstractions.Data;
 using ForeverBloom.Application.Abstractions.Requests;
-using ForeverBloom.Application.Pagination;
 using ForeverBloom.Application.Sorting;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Products.Queries.BrowseCatalogProducts;
 
 internal sealed class BrowseCatalogProductsQueryHandler
-    : IQueryHandler<BrowseCatalogProductsQuery, PagedResult<BrowseCatalogProductsResultItem>>
+    : IQueryHandler<BrowseCatalogProductsQuery, BrowseCatalogProductsResult>
 {
     private readonly IDbConnectionFactory _connectionFactory;
 
@@ -17,17 +17,16 @@ internal sealed class BrowseCatalogProductsQueryHandler
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<Result<PagedResult<BrowseCatalogProductsResultItem>>> Handle(
-        BrowseCatalogProductsQuery query,
+    public async Task<Result<BrowseCatalogProductsResult>> Handle(
+        BrowseCatalogProductsQuery request,
         CancellationToken cancellationToken)
     {
-        // TODO: Review this
         using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
 
-        var sql = BuildQuery(query, out var parameters);
+        var (query, parameters) = BuildQuery(request);
 
         var items = await connection.QueryAsync<ProductListItemDtoWithCount>(
-            new CommandDefinition(sql, parameters, cancellationToken: cancellationToken));
+            new CommandDefinition(query, parameters, cancellationToken: cancellationToken));
 
         var itemsList = items.ToList();
         var totalCount = itemsList.FirstOrDefault()?.TotalCount ?? 0;
@@ -43,43 +42,49 @@ internal sealed class BrowseCatalogProductsQueryHandler
                 MetaDescription = item.MetaDescription,
                 CategoryId = item.CategoryId,
                 CategoryName = item.CategoryName,
-                PrimaryImagePath = item.PrimaryImagePath,
+                ImageSource = item.ImageSource,
+                ImageAltText = item.ImageAltText,
                 AvailabilityStatusCode = item.AvailabilityStatusCode,
                 IsFeatured = item.IsFeatured
             }).ToList(),
-            PageNumber = query.PageNumber,
-            PageSize = query.PageSize,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
             TotalCount = totalCount
         };
 
-        return Result<PagedResult<BrowseCatalogProductsResultItem>>.Success(result);
+        return Result<BrowseCatalogProductsResult>.Success(result);
     }
 
-    private static string BuildQuery(BrowseCatalogProductsQuery query, out DynamicParameters parameters)
+    private static (string Query, DynamicParameters Parameters) BuildQuery(BrowseCatalogProductsQuery request)
     {
-        parameters = new DynamicParameters();
-        var conditions = new List<string>();
+        var parameters = new DynamicParameters();
 
-        // Base query with mandatory public visibility rules
+        // Base query with mandatory public visibility rules and image selection
         const string baseQuery = """
             SELECT
-                p.id,
-                p.name,
-                p.current_slug AS slug,
-                p.price,
-                p.meta_description,
-                p.category_id,
-                c.name AS category_name,
-                p.availability AS availability_status_code,
-                p.is_featured,
-                p.display_order,
-                (SELECT pi.image_path
-                 FROM product_images pi
-                 WHERE pi.product_id = p.id
-                 ORDER BY pi.display_order
-                 LIMIT 1) AS primary_image_path
+              p.id,
+              p.name,
+              p.current_slug AS slug,
+              p.price,
+              p.meta_description,
+              p.category_id,
+              c.name AS category_name,
+              p.availability AS availability_status_code,
+              p.is_featured,
+              p.created_at,
+              pi.image_path AS image_source,
+              pi.image_alt_text
             FROM products p
             INNER JOIN categories c ON p.category_id = c.id
+            LEFT JOIN LATERAL (
+              SELECT pi.image_path, pi.image_alt_text
+              FROM product_images pi
+              WHERE pi.product_id = p.id
+              ORDER BY
+                pi.is_primary DESC,
+                pi.display_order
+              LIMIT 1
+            ) pi ON true
             WHERE p.publish_status = 2
               AND p.deleted_at IS NULL
               AND NOT EXISTS (
@@ -90,97 +95,73 @@ internal sealed class BrowseCatalogProductsQueryHandler
               )
             """;
 
-        // Optional filters - add conditions based on active parameters
+        var productCteBuilder = new StringBuilder(baseQuery);
 
-        if (query.CategoryId.HasValue)
+        // Category filter - filter only products whose category is a descendant of the provided category
+        if (request.CategoryId.HasValue)
         {
-            conditions.Add("""
-                EXISTS (
+            productCteBuilder.AppendLine();
+            productCteBuilder.Append("""
+                  AND EXISTS (
                     SELECT 1
                     FROM categories pc
                     WHERE pc.id = @CategoryId
-                      AND (pc.path @> c.path OR pc.path = c.path)
+                      AND pc.path @> c.path
                 )
                 """);
-            parameters.Add("CategoryId", query.CategoryId.Value);
+            parameters.Add("CategoryId", request.CategoryId.Value);
         }
 
-        if (query.Featured.HasValue)
+        // Featured filter - filter only products with provided featured state
+        if (request.Featured.HasValue)
         {
-            conditions.Add("p.is_featured = @Featured");
-            parameters.Add("Featured", query.Featured.Value);
+            productCteBuilder.AppendLine();
+            productCteBuilder.Append("  AND p.is_featured = @Featured");
+            parameters.Add("Featured", request.Featured.Value);
         }
 
-        // Build complete WHERE clause
-        var whereClause = baseQuery;
-        if (conditions.Count > 0)
-        {
-            whereClause += " AND " + string.Join(" AND ", conditions);
-        }
+        var productCte = productCteBuilder.ToString();
+        var orderByClause = GetOrderByClause(request.SortStrategy);
 
-        // Build ORDER BY clause
-        var orderByClause = BuildOrderByClause(query.SortBy);
-
-        // Build final SQL with CTE and pagination
-        var sql = $"""
+        var query = $"""
             WITH filtered_products AS (
-                {whereClause}
+                {productCte}
+            ),
+            page AS (
+                SELECT *
+                FROM filtered_products
+                {orderByClause}
+                LIMIT @PageSize OFFSET @Offset
+            ),
+            total AS (
+                SELECT COUNT(*) AS total_count
+                FROM filtered_products
             )
-            SELECT *, COUNT(*) OVER() AS total_count
-            FROM filtered_products
-            {orderByClause}
-            LIMIT @PageSize OFFSET @Offset
+            SELECT p.*, t.total_count
+            FROM page AS p
+            CROSS JOIN total AS t
+            {orderByClause};
             """;
 
-        // Add pagination parameters
-        parameters.Add("PageSize", query.PageSize);
-        parameters.Add("Offset", (query.PageNumber - 1) * query.PageSize);
+        parameters.Add("PageSize", request.PageSize);
+        parameters.Add("Offset", (request.PageNumber - 1) * request.PageSize);
 
-        return sql;
+        return (query, parameters);
     }
 
-    private static string BuildOrderByClause(SortCriterion[]? sortCriteria)
+    private static string GetOrderByClause(SortStrategy sortStrategy)
     {
-        if (sortCriteria is null || sortCriteria.Length == 0)
+        return sortStrategy.Id.ToLowerInvariant() switch
         {
-            // Default sorting
-            return "ORDER BY display_order, name";
-        }
-
-        var orderByParts = new List<string>();
-
-        foreach (var criterion in sortCriteria)
-        {
-            var direction = criterion.Direction == SortDirection.Descending ? "DESC" : "ASC";
-
-            var columnName = criterion.PropertyName.ToLowerInvariant() switch
-            {
-                "name" => "name",
-                "price" => "price",
-                _ => "name" // Fallback (shouldn't happen due to validation)
-            };
-
-            // Special handling for price sorting with NULLs
-            if (columnName == "price")
-            {
-                // Place non-null prices first, then sort by display_order for nulls
-                orderByParts.Add("price IS NULL");  // false (priced) comes first
-                orderByParts.Add($"price {direction}");
-                orderByParts.Add("display_order");
-                orderByParts.Add("name");
-            }
-            else
-            {
-                orderByParts.Add($"{columnName} {direction}");
-            }
-        }
-
-        return "ORDER BY " + string.Join(", ", orderByParts);
+            "relevance" => "ORDER BY is_featured DESC, created_at DESC, id",
+            "name_asc" => "ORDER BY lower(name), created_at DESC, id",
+            "name_desc" => "ORDER BY lower(name) DESC, created_at DESC, id",
+            "price_asc" => "ORDER BY price NULLS LAST, lower(name), created_at DESC, id",
+            "price_desc" => "ORDER BY price DESC NULLS LAST, lower(name), created_at DESC, id",
+            _ => throw new ArgumentOutOfRangeException(nameof(sortStrategy), sortStrategy, null)
+        };
     }
 
-    /// <summary>
-    /// Extended DTO that includes the total count from the window function.
-    /// </summary>
     private sealed class ProductListItemDtoWithCount
     {
         public long Id { get; set; }
@@ -190,7 +171,8 @@ internal sealed class BrowseCatalogProductsQueryHandler
         public string? MetaDescription { get; set; }
         public long CategoryId { get; set; }
         public string CategoryName { get; set; } = null!;
-        public string? PrimaryImagePath { get; set; }
+        public string? ImageSource { get; set; }
+        public string? ImageAltText { get; set; }
         public int AvailabilityStatusCode { get; set; }
         public bool IsFeatured { get; set; }
         public int TotalCount { get; set; }

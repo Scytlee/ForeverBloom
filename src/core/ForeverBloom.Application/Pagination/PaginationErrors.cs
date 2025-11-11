@@ -1,4 +1,4 @@
-﻿using ForeverBloom.SharedKernel.Result;
+using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Pagination;
 

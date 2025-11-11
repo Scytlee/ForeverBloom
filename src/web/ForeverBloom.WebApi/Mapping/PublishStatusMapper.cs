@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ForeverBloom.Domain.Catalog;
 
 namespace ForeverBloom.WebApi.Mapping;
@@ -27,7 +28,7 @@ public static class PublishStatusMapper
     /// <param name="value">The snake_case string value (e.g., "draft", "published", "hidden").</param>
     /// <param name="status">The corresponding PublishStatus if successful.</param>
     /// <returns>True if parsing succeeded; otherwise, false.</returns>
-    public static bool TryParse(string value, out PublishStatus? status)
+    public static bool TryParse(string value, [NotNullWhen(true)] out PublishStatus? status)
     {
         if (string.IsNullOrWhiteSpace(value))
         {

@@ -21,4 +21,10 @@ public interface IRepository<T> where T : Entity
     /// </summary>
     /// <param name="entity">The entity to add</param>
     void Add(T entity);
+
+    /// <summary>
+    /// Permanently deletes an entity from the repository.
+    /// </summary>
+    /// <param name="entity">The entity to delete</param>
+    void Delete(T entity);
 }

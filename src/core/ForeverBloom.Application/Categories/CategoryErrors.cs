@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Catalog;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Categories;
@@ -46,12 +47,61 @@ public static class CategoryErrors
     }
 
     /// <summary>
-    /// Error raised when attempting to reparent a category with too many descendants.
+    /// Error raised when attempting to perform an operation on a category with too many descendants.
     /// </summary>
-    public sealed record TooManyDescendantsToMove(long CategoryId, int MaxAllowed) : IError
+    public sealed record TooManyDescendants(long CategoryId) : IError
     {
-        public string Code => "Category.TooManyDescendantsToMove";
-        public string Message => $"Cannot reparent category {CategoryId} because it has more than {MaxAllowed} descendants.";
+        public string Code => "Category.TooManyDescendants";
+        public string Message => $"Cannot perform the operation on category {CategoryId} because it has more than {MaximumAllowedDescendants} descendants.";
+        public int MaximumAllowedDescendants => Category.DescendantLimitOnUpdate;
+    }
+
+    /// <summary>
+    /// Error raised when attempting to restore a category that has archived ancestors.
+    /// </summary>
+    public sealed record HasArchivedAncestors(long CategoryId) : IError
+    {
+        public string Code => "Category.HasArchivedAncestors";
+        public string Message => $"Cannot restore category {CategoryId} because it has one or more archived ancestors.";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because it is not archived.
+    /// </summary>
+    public sealed record CannotDeleteNotArchived(long CategoryId) : IError
+    {
+        public string Code => "Category.CannotDeleteNotArchived";
+        public string Message => $"Category with ID {CategoryId} must be archived before it can be deleted.";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because insufficient time has passed since archival.
+    /// </summary>
+    public sealed record CannotDeleteTooSoon(
+        long CategoryId,
+        DateTimeOffset ArchivedAt,
+        DateTimeOffset EligibleAt) : IError
+    {
+        public string Code => "Category.CannotDeleteTooSoon";
+        public string Message => $"Category with ID {CategoryId} was archived at {ArchivedAt:u} and can be deleted after {EligibleAt:u}.";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because it has children categories.
+    /// </summary>
+    public sealed record CannotDeleteHasChildren(long CategoryId) : IError
+    {
+        public string Code => "Category.CannotDeleteHasChildren";
+        public string Message => $"Cannot delete category with ID {CategoryId} because it has children.";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because it has products referencing it.
+    /// </summary>
+    public sealed record CannotDeleteHasProducts(long CategoryId) : IError
+    {
+        public string Code => "Category.CannotDeleteHasProducts";
+        public string Message => $"Cannot delete category with ID {CategoryId} because it has products referencing it.";
     }
 
     /// <summary>
@@ -72,4 +122,13 @@ public static class CategoryErrors
     /// Error indicating a category was not found via ID lookup.
     /// </summary>
     public sealed record NotFoundById(long AttemptedId) : NotFound;
+
+    /// <summary>
+    /// Error indicating the category slug has changed to a new value.
+    /// </summary>
+    public sealed record SlugChanged(string AttemptedSlug, string CurrentSlug) : IError
+    {
+        public string Code => "Category.SlugChanged";
+        public string Message => "The category slug has changed.";
+    }
 }

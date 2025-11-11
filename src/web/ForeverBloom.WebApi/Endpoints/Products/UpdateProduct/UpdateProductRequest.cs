@@ -12,7 +12,6 @@ internal sealed record UpdateProductRequest(
     Optional<string?> MetaDescription,
     Optional<long> CategoryId,
     Optional<decimal?> Price,
-    Optional<int> DisplayOrder,
     Optional<bool> IsFeatured,
     Optional<string> Availability,
     Optional<string> PublishStatus)
@@ -31,7 +30,6 @@ internal sealed record UpdateProductRequest(
             MetaDescription: MetaDescription,
             CategoryId: CategoryId,
             Price: Price,
-            DisplayOrder: DisplayOrder,
             IsFeatured: IsFeatured,
             Availability: availabilityStatus is not null
                 ? Optional<ProductAvailabilityStatus>.FromValue(availabilityStatus)

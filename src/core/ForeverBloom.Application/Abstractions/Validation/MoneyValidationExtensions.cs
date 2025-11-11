@@ -29,27 +29,27 @@ internal static class MoneyValidationExtensions
             {
                 switch (error)
                 {
-                    case MoneyErrors.NotPositive e:
-                        context.AddMoneyNotPositiveFailure(e, value.Value);
+                    case MoneyErrors.Negative e:
+                        context.AddMoneyNegativeFailure(e);
                         break;
                     case MoneyErrors.InvalidPrecision e:
-                        context.AddMoneyInvalidPrecisionFailure(e, value.Value);
+                        context.AddMoneyInvalidPrecisionFailure(e);
                         break;
                 }
             }
         });
     }
 
-    private static void AddMoneyNotPositiveFailure<T>(this ValidationContext<T> context, MoneyErrors.NotPositive error, decimal attemptedValue)
+    private static void AddMoneyNegativeFailure<T>(this ValidationContext<T> context, MoneyErrors.Negative error)
     {
-        var failure = ValidationExtensions.CreateFailureFromError(context, error, attemptedValue);
+        var failure = ValidationExtensions.CreateFailureFromError(context, error, error.AttemptedValue);
         context.AddFailure(failure);
     }
 
-    private static void AddMoneyInvalidPrecisionFailure<T>(this ValidationContext<T> context, MoneyErrors.InvalidPrecision error, decimal attemptedValue)
+    private static void AddMoneyInvalidPrecisionFailure<T>(this ValidationContext<T> context, MoneyErrors.InvalidPrecision error)
     {
-        var failure = ValidationExtensions.CreateFailureFromError(context, error, attemptedValue);
-        failure.CustomState = new { Money.RequiredDecimalPlaces };
+        var failure = ValidationExtensions.CreateFailureFromError(context, error, error.AttemptedValue);
+        failure.CustomState = new { error.RequiredDecimalPlaces };
         context.AddFailure(failure);
     }
 }

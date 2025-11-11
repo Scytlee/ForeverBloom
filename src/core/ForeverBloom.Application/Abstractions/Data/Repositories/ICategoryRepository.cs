@@ -43,4 +43,40 @@ public interface ICategoryRepository : IRepository<Category>
         long excludeCategoryId,
         int maxCount,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a category by its ID, including archived categories.
+    /// </summary>
+    /// <param name="id">The category ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The category if found, null otherwise</returns>
+    Task<Category?> GetByIdIncludingArchivedAsync(long id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if a category has any archived ancestors in its hierarchy.
+    /// </summary>
+    /// <param name="categoryPath">The hierarchical path of the category to check.</param>
+    /// <param name="excludeCategoryId">The category ID to exclude from results (typically the category itself).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if any ancestor is archived, false otherwise.</returns>
+    Task<bool> HasArchivedAncestorsAsync(
+        HierarchicalPath categoryPath,
+        long excludeCategoryId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if a category has any child categories (including archived ones).
+    /// </summary>
+    /// <param name="categoryId">The category ID to check</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if the category has any child categories, false otherwise</returns>
+    Task<bool> HasChildCategoriesAsync(long categoryId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if any products (including archived ones) reference this category.
+    /// </summary>
+    /// <param name="categoryId">The category ID to check</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>True if any products reference this category, false otherwise</returns>
+    Task<bool> HasProductsAsync(long categoryId, CancellationToken cancellationToken = default);
 }

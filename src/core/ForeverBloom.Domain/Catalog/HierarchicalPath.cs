@@ -174,6 +174,15 @@ public sealed record HierarchicalPath
     /// Implicit conversion to string for convenience.
     /// </summary>
     public static implicit operator string(HierarchicalPath path) => path.Value;
+
+    public bool Equals(HierarchicalPath? other)
+    {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Value.Equals(other.Value);
+    }
+
+    public override int GetHashCode() => Value.GetHashCode();
 }
 
 public static class HierarchicalPathErrors

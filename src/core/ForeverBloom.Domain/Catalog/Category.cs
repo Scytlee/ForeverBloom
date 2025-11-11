@@ -7,6 +7,10 @@ namespace ForeverBloom.Domain.Catalog;
 
 public sealed class Category : Entity, ISoftDeleteable
 {
+    // Constants
+    public const int DescendantLimitOnUpdate = 100;
+    public const int DeletionGracePeriodInHours = 24;
+
     // Properties
     public SeoTitle Name { get; private set; } = null!;
     public MetaDescription? Description { get; private set; }
@@ -271,6 +275,47 @@ public sealed class Category : Entity, ISoftDeleteable
 
         Path = newPath;
         UpdatedAt = timestamp;
+
+        return Result<bool>.Success(true);
+    }
+
+    /// <summary>
+    /// Archives the category by setting the DeletedAt timestamp.
+    /// </summary>
+    /// <param name="timestamp">The timestamp of this archival operation.</param>
+    /// <returns>
+    /// A result containing <c>true</c> when the category was archived (callers should persist)
+    /// or <c>false</c> when the category is already archived (no-op).
+    /// </returns>
+    public Result<bool> Archive(DateTimeOffset timestamp)
+    {
+        // No-op: already archived
+        if (DeletedAt is not null)
+        {
+            return Result<bool>.Success(false);
+        }
+
+        DeletedAt = timestamp;
+
+        return Result<bool>.Success(true);
+    }
+
+    /// <summary>
+    /// Restores the category by clearing the DeletedAt timestamp.
+    /// </summary>
+    /// <returns>
+    /// A result containing <c>true</c> when the category was restored (callers should persist)
+    /// or <c>false</c> when the category is already restored (no-op).
+    /// </returns>
+    public Result<bool> Restore()
+    {
+        // No-op: already restored
+        if (DeletedAt is null)
+        {
+            return Result<bool>.Success(false);
+        }
+
+        DeletedAt = null;
 
         return Result<bool>.Success(true);
     }

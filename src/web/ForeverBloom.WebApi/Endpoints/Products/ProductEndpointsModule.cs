@@ -1,8 +1,14 @@
 using ForeverBloom.WebApi.Authentication;
+using ForeverBloom.WebApi.Endpoints.Products.ArchiveProduct;
+using ForeverBloom.WebApi.Endpoints.Products.BrowseCatalogProducts;
 using ForeverBloom.WebApi.Endpoints.Products.CreateProduct;
+using ForeverBloom.WebApi.Endpoints.Products.DeleteProduct;
 using ForeverBloom.WebApi.Endpoints.Products.GetProductById;
 using ForeverBloom.WebApi.Endpoints.Products.GetProductBySlug;
+using ForeverBloom.WebApi.Endpoints.Products.GetProductsSitemapData;
+using ForeverBloom.WebApi.Endpoints.Products.ListProducts;
 using ForeverBloom.WebApi.Endpoints.Products.ReslugProduct;
+using ForeverBloom.WebApi.Endpoints.Products.RestoreProduct;
 using ForeverBloom.WebApi.Endpoints.Products.UpdateProduct;
 using ForeverBloom.WebApi.Endpoints.Products.UpdateProductImages;
 
@@ -20,14 +26,20 @@ public static class ProductEndpointsModule
     public static class Names
     {
         // Public
+        public const string BrowseCatalogProducts = "BrowseCatalogProducts";
         public const string GetProductBySlug = "GetProductBySlug";
+        public const string GetProductsSitemapData = "GetProductsSitemapData";
 
         // Admin
+        public const string ListProducts = "ListProducts";
         public const string GetProductById = "GetProductById";
         public const string CreateProduct = "CreateProduct";
         public const string UpdateProductImages = "UpdateProductImages";
         public const string UpdateProduct = "UpdateProduct";
         public const string ReslugProduct = "ReslugProduct";
+        public const string ArchiveProduct = "ArchiveProduct";
+        public const string RestoreProduct = "RestoreProduct";
+        public const string DeleteProduct = "DeleteProduct";
     }
 
     /// <summary>
@@ -57,16 +69,22 @@ public static class ProductEndpointsModule
     {
         var publicEndpointsGroup = app.MapGroup("/products")
             .WithTags(Tags.Products, Tags.Public);
+        publicEndpointsGroup.MapBrowseCatalogProductsEndpoint();
         publicEndpointsGroup.MapGetProductBySlugEndpoint();
+        publicEndpointsGroup.MapGetProductsSitemapDataEndpoint();
 
         var adminEndpointsGroup = app.MapGroup("/admin/products")
             .WithTags(Tags.Products, Tags.Admin)
             .RequireAuthorization(ApiKeyAuthenticationDefaults.AdminAccessPolicyName);
+        adminEndpointsGroup.MapListProductsEndpoint();
         adminEndpointsGroup.MapGetProductByIdEndpoint();
         adminEndpointsGroup.MapCreateProductEndpoint();
         adminEndpointsGroup.MapUpdateProductImagesEndpoint();
         adminEndpointsGroup.MapUpdateProductEndpoint();
         adminEndpointsGroup.MapReslugProductEndpoint();
+        adminEndpointsGroup.MapArchiveProductEndpoint();
+        adminEndpointsGroup.MapRestoreProductEndpoint();
+        adminEndpointsGroup.MapDeleteProductEndpoint();
 
         return app;
     }

@@ -14,11 +14,7 @@ internal sealed class BrowseCatalogProductsQueryValidator : AbstractValidator<Br
         RuleFor(query => query.PageSize)
             .MustBeValidPageSize();
 
-        RuleFor(query => query.SortBy!)
-            .MustHaveNoDuplicateProperties()
-            .When(query => query.SortBy is not null);
-
-        RuleForEach(query => query.SortBy)
-            .MustBeValidSortCriterion(BrowseCatalogProductsQuery.AllowedSortProperties);
+        RuleFor(query => query.SortStrategy)
+            .MustBeValidSortStrategy(BrowseCatalogProductsQuery.AllowedSortStrategies);
     }
 }

@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\core\ForeverBloom.Domain\ForeverBloom.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\core\ForeverBloom.SharedKernel\ForeverBloom.SharedKernel.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="7.2.0" />
+  </ItemGroup>
+
+</Project>

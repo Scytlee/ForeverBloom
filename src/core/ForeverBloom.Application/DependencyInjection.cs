@@ -20,7 +20,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         // Register FluentValidation validators
-        services.AddValidatorsFromAssembly(ApplicationAssembly);
+        services.AddValidatorsFromAssembly(ApplicationAssembly, includeInternalTypes: true);
 
         // Register MediatR with all handlers from this assembly
         services.AddMediatR(cfg =>

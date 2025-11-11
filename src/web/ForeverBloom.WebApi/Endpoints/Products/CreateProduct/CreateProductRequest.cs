@@ -14,7 +14,6 @@ internal sealed record CreateProductRequest(
     string Slug,
     long CategoryId,
     decimal? Price,
-    int DisplayOrder,
     bool IsFeatured,
     string AvailabilityStatus,
     IReadOnlyCollection<CreateProductRequestImage>? Images)
@@ -27,7 +26,6 @@ internal sealed record CreateProductRequest(
         Slug: Slug,
         CategoryId: CategoryId,
         Price: Price,
-        DisplayOrder: DisplayOrder,
         IsFeatured: IsFeatured,
         AvailabilityStatus: availabilityStatus,
         Images: Images?.Select(CreateProductRequestImage.ToCommandImage).ToArray());

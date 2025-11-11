@@ -9,7 +9,6 @@ public sealed record UpdateProductResult(
     string? MetaDescription,
     long CategoryId,
     decimal? Price,
-    int DisplayOrder,
     bool IsFeatured,
     ProductAvailabilityStatus Availability,
     PublishStatus PublishStatus,

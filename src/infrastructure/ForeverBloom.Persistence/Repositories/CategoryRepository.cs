@@ -60,4 +60,43 @@ internal sealed class CategoryRepository : Repository<Category>, ICategoryReposi
             .Take(maxCount + 1)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Category?> GetByIdIncludingArchivedAsync(long id, CancellationToken cancellationToken = default)
+    {
+        return await DbContext
+            .Set<Category>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+    }
+
+    [SuppressMessage("ReSharper", "EntityFramework.ClientSideDbFunctionCall")]
+    public async Task<bool> HasArchivedAncestorsAsync(
+        HierarchicalPath categoryPath,
+        long excludeCategoryId,
+        CancellationToken cancellationToken = default)
+    {
+        var categoryLTree = new LTree(categoryPath.Value);
+
+        return await DbContext.Set<Category>()
+            .IgnoreQueryFilters()
+            .AnyAsync(
+                c => c.Id != excludeCategoryId
+                    && c.DeletedAt != null
+                    && categoryLTree.IsDescendantOf(EF.Property<LTree>(c, nameof(Category.Path))),
+                cancellationToken);
+    }
+
+    public async Task<bool> HasChildCategoriesAsync(long categoryId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.Set<Category>()
+            .IgnoreQueryFilters()
+            .AnyAsync(c => c.ParentCategoryId == categoryId, cancellationToken);
+    }
+
+    public async Task<bool> HasProductsAsync(long categoryId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.Set<Product>()
+            .IgnoreQueryFilters()
+            .AnyAsync(p => p.CategoryId == categoryId, cancellationToken);
+    }
 }
