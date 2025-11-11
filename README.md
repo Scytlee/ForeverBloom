@@ -2,7 +2,7 @@
 
 > **Production snapshot:** 2025-10-26
 
-> There is an ongoing refactor of this system into a pragmatic Clean Architecture solution with rich domain. The snapshot can be found on the `refactor/clean-architecture` branch.
+> There is an ongoing refactor of this system into a pragmatic Clean Architecture solution with rich domain. It also comes with an upgrade to .NET 10 and Aspire 13. The snapshot can be found on the `refactor/clean-architecture` branch.
 
 Production snapshot of Phase 1 (catalog showcase) of a modern e-commerce platform built with .NET 9 that demonstrates pragmatic architecture, solid testing practices, and a production-minded DevOps setup. Live, running system is available at [foreverbloomstudio.pl](https://foreverbloomstudio.pl/).
 
