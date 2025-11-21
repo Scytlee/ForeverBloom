@@ -9,9 +9,9 @@ internal static class CategoryFactory
         DateTimeOffset timestamp,
         string name = "Test Category",
         string slug = "test-category",
+        string path = "test-category",
         string? description = null,
         string? imagePath = null,
-        string path = "test-category",
         long? parentCategoryId = null,
         int displayOrder = 1,
         PublishStatus? publishStatus = null,
@@ -19,13 +19,13 @@ internal static class CategoryFactory
     {
         var categoryResult = Category.Create(
             SeoTitleFactory.Create(name),
-            description is null ? null : MetaDescriptionFactory.Create(description),
             SlugFactory.Create(slug),
-            imagePath is null ? null : ImageFactory.Create(imagePath),
             HierarchicalPathFactory.Create(path),
+            timestamp,
+            description is null ? null : MetaDescriptionFactory.Create(description),
+            imagePath is null ? null : ImageFactory.Create(imagePath),
             parentCategoryId,
-            displayOrder,
-            timestamp);
+            displayOrder);
 
         categoryResult.Should().BeSuccess();
         var category = categoryResult.Value!;
@@ -38,12 +38,8 @@ internal static class CategoryFactory
         if (publishStatus is not null && publishStatus != PublishStatus.Draft)
         {
             var updateResult = category.Update(
-                name: default,
-                description: default,
-                image: default,
-                displayOrder: default,
-                publishStatus: publishStatus,
-                timestamp: timestamp);
+                timestamp,
+                publishStatus: publishStatus);
             updateResult.Should().BeSuccess();
         }
 

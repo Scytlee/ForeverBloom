@@ -20,6 +20,15 @@ internal sealed class BrowseCatalogCategoryTreeQueryHandler
         BrowseCatalogCategoryTreeQuery request,
         CancellationToken cancellationToken)
     {
+        // Early return when Levels = 0 (no SQL query needed)
+        if (request.Levels is 0)
+        {
+            return Result<BrowseCatalogCategoryTreeResult>.Success(new BrowseCatalogCategoryTreeResult
+            {
+                Categories = []
+            });
+        }
+
         using var connection = await _connectionFactory.CreateConnectionAsync(cancellationToken);
 
         var (sql, parameters) = BuildQuery(request);
@@ -117,16 +126,16 @@ internal sealed class BrowseCatalogCategoryTreeQueryHandler
         {
             sqlBuilder.AppendLine("  AND root.path @> c.path");
 
-            if (request.Depth.HasValue)
+            if (request.Levels.HasValue)
             {
-                sqlBuilder.AppendLine("  AND nlevel(c.path) <= root.root_level + @Depth");
-                parameters.Add("Depth", request.Depth.Value);
+                sqlBuilder.AppendLine("  AND nlevel(c.path) < root.root_level + @Levels");
+                parameters.Add("Levels", request.Levels.Value);
             }
         }
-        else if (request.Depth.HasValue)
+        else if (request.Levels.HasValue)
         {
-            sqlBuilder.AppendLine("  AND nlevel(c.path) <= @Depth");
-            parameters.Add("Depth", request.Depth.Value);
+            sqlBuilder.AppendLine("  AND nlevel(c.path) <= @Levels");
+            parameters.Add("Levels", request.Levels.Value);
         }
 
         sqlBuilder.AppendLine("ORDER BY c.path, c.display_order;");

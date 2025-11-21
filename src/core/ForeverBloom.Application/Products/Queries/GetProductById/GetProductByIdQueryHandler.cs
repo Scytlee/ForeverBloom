@@ -2,6 +2,7 @@ using System.Data;
 using Dapper;
 using ForeverBloom.Application.Abstractions.Data;
 using ForeverBloom.Application.Abstractions.Requests;
+using ForeverBloom.Domain.Catalog;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Products.Queries.GetProductById;

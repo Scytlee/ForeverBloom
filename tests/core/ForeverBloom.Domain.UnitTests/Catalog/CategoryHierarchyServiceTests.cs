@@ -133,7 +133,7 @@ public sealed class CategoryHierarchyServiceTests
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<CategoryErrors.CircularDependency>();
         error.CategoryId.Should().Be(5);
-        error.AttemptedParentId.Should().Be(10);
+        error.ParentId.Should().Be(10);
     }
 
     [Fact]

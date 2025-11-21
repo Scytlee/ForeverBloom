@@ -8,7 +8,7 @@ internal sealed class ProductImageFactory
         string imageSource = "/images/test.jpg",
         string? imageAltText = "Test image",
         bool isPrimary = false,
-        int displayOrder = 1)
+        int displayOrder = 0)
     {
         var image = ImageFactory.Create(imageSource, imageAltText);
         return ProductImage.Create(image, isPrimary, displayOrder);

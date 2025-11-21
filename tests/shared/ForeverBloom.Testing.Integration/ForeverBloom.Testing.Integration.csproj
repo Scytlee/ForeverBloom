@@ -9,6 +9,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
     <PackageReference Include="Npgsql" Version="10.0.0-rc.1" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.8.1" />
     <PackageReference Include="xunit.v3.extensibility.core" Version="3.2.0" />
@@ -21,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\web\ForeverBloom.WebApi\ForeverBloom.WebApi.csproj" />
     <ProjectReference Include="..\..\..\src\core\ForeverBloom.Application\ForeverBloom.Application.csproj" />
     <ProjectReference Include="..\..\..\src\infrastructure\ForeverBloom.Persistence\ForeverBloom.Persistence.csproj" />
+    <ProjectReference Include="..\ForeverBloom.Testing\ForeverBloom.Testing.csproj" />
   </ItemGroup>
 </Project>

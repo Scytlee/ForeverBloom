@@ -2,6 +2,7 @@ using System.Net;
 using ForeverBloom.WebApi.Client;
 using ForeverBloom.WebApi.Client.Endpoints.Products.Contracts;
 using ForeverBloom.WebUI.RazorPages.PageModels;
+using ForeverBloom.WebUI.RazorPages.Utilities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ForeverBloom.WebUI.RazorPages.Pages;
@@ -40,7 +41,7 @@ public class ProductPageModel : BasePageModel
                     break;
                 case (false, HttpStatusCode.MovedPermanently):
                     // Extract the new slug from the redirect URL and perform a permanent redirect
-                    var newSlug = ExtractSlugFromUrl(getProductResponse.Location!);
+                    var newSlug = UrlHelper.ExtractSlugFromUrl(getProductResponse.Location!);
                     if (string.IsNullOrWhiteSpace(newSlug))
                     {
                         ErrorMessage = "Wystąpił błąd podczas ładowania strony. Odśwież stronę, lub spróbuj ponownie później.";
@@ -65,12 +66,5 @@ public class ProductPageModel : BasePageModel
             _logger.LogError(ex, "Error occurred while loading product page for slug '{Slug}'", Slug);
             return Page();
         }
-    }
-
-    private static string? ExtractSlugFromUrl(string redirectUrl)
-    {
-        // Split by '/' and get the last segment
-        var segments = redirectUrl.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        return segments.Length > 0 ? segments[^1] : null;
     }
 }

@@ -1,4 +1,5 @@
 using ForeverBloom.Domain.Abstractions;
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.Domain.Shared;
 using ForeverBloom.SharedKernel.Optional;
 using ForeverBloom.SharedKernel.Result;
@@ -35,17 +36,20 @@ public sealed class Product : Entity, ISoftDeleteable
 
     private Product(
         ProductName name,
-        SeoTitle? seoTitle,
-        HtmlFragment? fullDescription,
-        MetaDescription? metaDescription,
         Slug slug,
         long categoryId,
-        Money? price,
-        bool isFeatured,
-        ProductAvailabilityStatus availability,
-        List<ProductImage> images,
-        DateTimeOffset timestamp) : base(timestamp)
+        DateTimeOffset timestamp,
+        SeoTitle? seoTitle = null,
+        HtmlFragment? fullDescription = null,
+        MetaDescription? metaDescription = null,
+        Money? price = null,
+        bool isFeatured = false,
+        ProductAvailabilityStatus? availability = null,
+        ICollection<ProductImage>? images = null) : base(timestamp)
     {
+        availability ??= ProductAvailabilityStatus.ComingSoon;
+        var imageList = images?.ToList() ?? [];
+
         Name = name;
         SeoTitle = seoTitle;
         FullDescription = fullDescription;
@@ -55,7 +59,7 @@ public sealed class Product : Entity, ISoftDeleteable
         Price = price;
         IsFeatured = isFeatured;
         Availability = availability;
-        Images = images;
+        Images = imageList;
     }
 
     /// <summary>
@@ -63,17 +67,20 @@ public sealed class Product : Entity, ISoftDeleteable
     /// </summary>
     public static Result<Product> Create(
         ProductName name,
-        SeoTitle? seoTitle,
-        HtmlFragment? fullDescription,
-        MetaDescription? metaDescription,
         Slug slug,
         long categoryId,
-        Money? price,
-        bool isFeatured,
-        ProductAvailabilityStatus availabilityStatus,
         DateTimeOffset timestamp,
+        SeoTitle? seoTitle = null,
+        HtmlFragment? fullDescription = null,
+        MetaDescription? metaDescription = null,
+        Money? price = null,
+        bool isFeatured = false,
+        ProductAvailabilityStatus? availabilityStatus = null,
         ICollection<ProductImage>? images = null)
     {
+        availabilityStatus ??= ProductAvailabilityStatus.ComingSoon;
+        images ??= [];
+
         var errors = new List<IError>();
 
         if (categoryId <= 0)
@@ -81,7 +88,7 @@ public sealed class Product : Entity, ISoftDeleteable
             errors.Add(new ProductErrors.CategoryIdInvalid(categoryId));
         }
 
-        if (images is not null && images.Count > 0)
+        if (images.Count > 0)
         {
             var imageValidationResult = ValidateImageCollection(images);
             if (imageValidationResult.IsFailure)
@@ -94,16 +101,16 @@ public sealed class Product : Entity, ISoftDeleteable
             errors,
             () => new Product(
                 name,
+                slug,
+                categoryId,
+                timestamp,
                 seoTitle,
                 fullDescription,
                 metaDescription,
-                slug,
-                categoryId,
                 price,
                 isFeatured,
                 availabilityStatus,
-                images?.ToList() ?? [],
-                timestamp));
+                images));
     }
 
     /// <summary>
@@ -114,23 +121,23 @@ public sealed class Product : Entity, ISoftDeleteable
     /// or <c>false</c> when the request was a no-op because no fields were set.
     /// </returns>
     public Result<bool> Update(
-        Optional<ProductName> name,
-        Optional<SeoTitle?> seoTitle,
-        Optional<HtmlFragment?> fullDescription,
-        Optional<MetaDescription?> metaDescription,
-        Optional<long> categoryId,
-        Optional<Money?> price,
-        Optional<bool> isFeatured,
-        Optional<ProductAvailabilityStatus> availability,
-        Optional<PublishStatus> publishStatus,
-        DateTimeOffset timestamp)
+        DateTimeOffset timestamp,
+        Optional<ProductName> name = default,
+        Optional<long> categoryId = default,
+        Optional<SeoTitle?> seoTitle = default,
+        Optional<HtmlFragment?> fullDescription = default,
+        Optional<MetaDescription?> metaDescription = default,
+        Optional<Money?> price = default,
+        Optional<bool> isFeatured = default,
+        Optional<ProductAvailabilityStatus> availability = default,
+        Optional<PublishStatus> publishStatus = default)
     {
         // No-op detection: if nothing will actually change, return early
         var hasChanges = (name.IsSet && Name != name.Value) ||
+                         (categoryId.IsSet && CategoryId != categoryId.Value) ||
                          (seoTitle.IsSet && SeoTitle != seoTitle.Value) ||
                          (fullDescription.IsSet && FullDescription != fullDescription.Value) ||
                          (metaDescription.IsSet && MetaDescription != metaDescription.Value) ||
-                         (categoryId.IsSet && CategoryId != categoryId.Value) ||
                          (price.IsSet && Price != price.Value) ||
                          (isFeatured.IsSet && IsFeatured != isFeatured.Value) ||
                          (availability.IsSet && Availability != availability.Value) ||
@@ -152,7 +159,7 @@ public sealed class Product : Entity, ISoftDeleteable
         {
             if (!PublishStatus.CanTransitionTo(publishStatus.Value))
             {
-                errors.Add(new ProductErrors.PublishStatusTransitionNotAllowed(PublishStatus, publishStatus.Value));
+                errors.Add(new ProductErrors.PublishStatusTransitionNotAllowed(PublishStatus.Name, publishStatus.Value.Name));
             }
         }
 
@@ -164,6 +171,9 @@ public sealed class Product : Entity, ISoftDeleteable
         if (name.IsSet)
             Name = name.Value;
 
+        if (categoryId.IsSet)
+            CategoryId = categoryId.Value;
+
         if (seoTitle.IsSet)
             SeoTitle = seoTitle.Value;
 
@@ -172,9 +182,6 @@ public sealed class Product : Entity, ISoftDeleteable
 
         if (metaDescription.IsSet)
             MetaDescription = metaDescription.Value;
-
-        if (categoryId.IsSet)
-            CategoryId = categoryId.Value;
 
         if (price.IsSet)
             Price = price.Value;
@@ -255,26 +262,25 @@ public sealed class Product : Entity, ISoftDeleteable
     /// </returns>
     private static Result ValidateImageCollection(ICollection<ProductImage> images)
     {
-        var imageList = images.ToList();
         var errors = new List<IError>();
 
         // Validate maximum image count
-        if (imageList.Count > MaxImageCount)
+        if (images.Count > MaxImageCount)
         {
-            errors.Add(new ProductErrors.TooManyImages(imageList.Count));
+            errors.Add(new ProductErrors.TooManyImages(images.Count));
         }
 
         // Validate primary image rules for non-empty collections
-        if (imageList.Count > 0)
+        if (images.Count > 0)
         {
-            var primaryCount = imageList.Count(image => image.IsPrimary);
+            var primaryCount = images.Count(image => image.IsPrimary);
             if (primaryCount == 0)
             {
                 errors.Add(new ProductErrors.NoPrimaryImage());
             }
             else if (primaryCount > 1)
             {
-                var primaryIndices = imageList
+                var primaryIndices = images
                     .Select((img, index) => new { img, index })
                     .Where(x => x.img.IsPrimary)
                     .Select(x => x.index)
@@ -321,34 +327,133 @@ public sealed class Product : Entity, ISoftDeleteable
 
 public static class ProductErrors
 {
-    public sealed record CategoryIdInvalid(long AttemptedId) : IError
+    public sealed record CategoryIdInvalid([AttemptedValue] long Id) : DomainError
     {
-        public string Code => "Product.CategoryIdInvalid";
-        public string Message => "Category ID must be greater than 0";
+        public override string Code => "Product.CategoryIdInvalid";
+        public override string Message => $"Category ID must be greater than 0, but was {Id}";
     }
 
-    public sealed record NoPrimaryImage : IError
+    public sealed record NoPrimaryImage : DomainError
     {
-        public string Code => "Product.NoPrimaryImage";
-        public string Message => "Product must have exactly one primary image when images are provided";
+        public override string Code => "Product.NoPrimaryImage";
+        public override string Message => "Product must have exactly one primary image when images are provided";
     }
 
-    public sealed record MultiplePrimaryImages(int[] PrimaryIndices) : IError
+    public sealed record MultiplePrimaryImages([AttemptedValue] int[] Indices) : DomainError
     {
-        public string Code => "Product.MultiplePrimaryImages";
-        public string Message => $"Only one image can be marked as primary, but {PrimaryIndices.Length} images at indices [{string.Join(", ", PrimaryIndices)}] are marked as primary";
+        public override string Code => "Product.MultiplePrimaryImages";
+        public override string Message => $"Only one image can be marked as primary, but {Indices.Length} images at indices [{string.Join(", ", Indices)}] are marked as primary";
     }
 
-    public sealed record PublishStatusTransitionNotAllowed(PublishStatus CurrentStatus, PublishStatus AttemptedStatus) : IError
+    public sealed record PublishStatusTransitionNotAllowed([CurrentValue] string CurrentStatus, [AttemptedValue] string AttemptedStatus) : DomainError
     {
-        public string Code => "Product.PublishStatusTransitionNotAllowed";
-        public string Message => $"Cannot transition publish status with code '{CurrentStatus.Code}' to '{AttemptedStatus.Code}'.";
+        public override string Code => "Product.PublishStatusTransitionNotAllowed";
+        public override string Message => $"Cannot transition publish status from '{CurrentStatus}' to '{AttemptedStatus}'";
     }
 
-    public sealed record TooManyImages(int AttemptedCount) : IError
+    public sealed record TooManyImages([AttemptedValue] int Count) : DomainError
     {
-        public string Code => "Product.Images.TooMany";
-        public string Message => $"Product can have at most {MaxImageCount} images, but {AttemptedCount} were provided.";
+        public override string Code => "Product.Images.TooMany";
+        public override string Message => $"Product can have at most {MaxImageCount} images, but {Count} were provided";
         public int MaxImageCount => Product.MaxImageCount;
+    }
+
+    /// <summary>
+    /// Error indicating a product was not found via slug lookup.
+    /// </summary>
+    public sealed record NotFoundBySlug([AttemptedValue] string Slug) : DomainError
+    {
+        public override string Code => "Product.NotFoundBySlug";
+        public override string Message => $"Product with slug '{Slug}' was not found";
+    }
+
+    /// <summary>
+    /// Error indicating a product was not found via ID lookup.
+    /// </summary>
+    public sealed record NotFoundById([AttemptedValue] long Id) : DomainError
+    {
+        public override string Code => "Product.NotFoundById";
+        public override string Message => $"Product with ID {Id} was not found";
+    }
+
+    /// <summary>
+    /// Error indicating a product slug has changed and requires a redirect.
+    /// </summary>
+    public sealed record SlugChanged([AttemptedValue] string AttemptedSlug, [CurrentValue] string CurrentSlug) : DomainError
+    {
+        public override string Code => "Product.SlugChanged";
+        public override string Message => $"The product slug has changed from '{AttemptedSlug}' to '{CurrentSlug}'";
+    }
+
+    /// <summary>
+    /// Error indicating a slug is already in use and not available for a new product.
+    /// </summary>
+    public sealed record SlugNotAvailable([AttemptedValue] string Slug) : DomainError
+    {
+        public override string Code => "Product.SlugNotAvailable";
+        public override string Message => $"The slug '{Slug}' is already in use";
+    }
+
+    /// <summary>
+    /// Error indicating the specified category was not found.
+    /// </summary>
+    public sealed record CategoryNotFound([AttemptedValue] long CategoryId) : DomainError
+    {
+        public override string Code => "Product.CategoryNotFound";
+        public override string Message => $"Category with ID {CategoryId} was not found";
+    }
+
+    /// <summary>
+    /// Error indicating the supplied product ID is not valid.
+    /// </summary>
+    public sealed record ProductIdInvalid([AttemptedValue] long Id) : DomainError
+    {
+        public override string Code => "Product.IdInvalid";
+        public override string Message => $"Product ID must be greater than 0, but was {Id}";
+    }
+
+    /// <summary>
+    /// Error indicating a product image was not found.
+    /// </summary>
+    public sealed record ImageNotFound([AttemptedValue] long Id) : DomainError
+    {
+        public override string Code => "Product.ImageNotFound";
+        public override string Message => $"The product image with ID {Id} was not found";
+    }
+
+    /// <summary>
+    /// Error indicating a product image ID is invalid.
+    /// </summary>
+    public sealed record ImageIdInvalid([AttemptedValue] long Id) : DomainError
+    {
+        public override string Code => "Product.ImageIdInvalid";
+        public override string Message => $"Image ID must be greater than 0, but was {Id}";
+    }
+
+    /// <summary>
+    /// Error indicating a product image ID is duplicated.
+    /// </summary>
+    public sealed record DuplicateImageIds([AttemptedValue] IReadOnlyList<long> Ids) : DomainError
+    {
+        public override string Code => "Product.DuplicateImageIds";
+        public override string Message => $"The following image IDs are duplicated: {string.Join(", ", Ids)}";
+    }
+
+    /// <summary>
+    /// Error indicating a product cannot be deleted because it is not archived.
+    /// </summary>
+    public sealed record CannotDeleteNotArchived([AttemptedValue] long ProductId) : DomainError
+    {
+        public override string Code => "Product.CannotDeleteNotArchived";
+        public override string Message => $"Product with ID {ProductId} must be archived before it can be deleted";
+    }
+
+    /// <summary>
+    /// Error indicating a product cannot be deleted because insufficient time has passed since archival.
+    /// </summary>
+    public sealed record CannotDeleteTooSoon([AttemptedValue] long ProductId, DateTimeOffset ArchivedAt, DateTimeOffset EligibleAt) : DomainError
+    {
+        public override string Code => "Product.CannotDeleteTooSoon";
+        public override string Message => $"Product with ID {ProductId} was archived at {ArchivedAt:u} and can be deleted after {EligibleAt:u}";
     }
 }

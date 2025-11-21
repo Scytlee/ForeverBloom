@@ -11,28 +11,36 @@ internal sealed class ProblemDetailsEnrichingFilter : IEndpointFilter
     {
         var result = await next(context);
 
-        if (result is IValueHttpResult { Value: ProblemDetails problemDetails })
+        var unwrappedResult = TryUnwrapResult(result);
+        switch (unwrappedResult)
         {
-            ProblemDetailsHelper.EnrichProblemDetails(problemDetails, context.HttpContext);
-        }
-
-        if (result is IValueHttpResult { Value: Microsoft.AspNetCore.Mvc.ProblemDetails mvcProblemDetails })
-        {
-            ProblemDetailsHelper.EnrichProblemDetails(mvcProblemDetails, context.HttpContext);
+            case IValueHttpResult { Value: ProblemDetails problemDetails }:
+                ProblemDetailsHelper.EnrichProblemDetails(problemDetails, context.HttpContext);
+                break;
+            case IValueHttpResult { Value: Microsoft.AspNetCore.Mvc.ProblemDetails mvcProblemDetails }:
+                ProblemDetailsHelper.EnrichProblemDetails(mvcProblemDetails, context.HttpContext);
+                break;
         }
 
         return result;
     }
+
+    private static IResult? TryUnwrapResult(object? result) => result switch
+    {
+        INestedHttpResult { Result: { } r } => r,
+        IResult r => r,
+        _ => null
+    };
 }
 
-public sealed record ProblemDetailsEnriched;
+public sealed record EnrichesProblemDetails;
 
 public static class ProblemDetailsEnrichingFilterExtensions
 {
     public static TBuilder EnrichProblemDetails<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder
     {
         builder.AddEndpointFilter<TBuilder, ProblemDetailsEnrichingFilter>()
-          .WithMetadata(new ProblemDetailsEnriched());
+          .WithMetadata(new EnrichesProblemDetails());
 
         return builder;
     }

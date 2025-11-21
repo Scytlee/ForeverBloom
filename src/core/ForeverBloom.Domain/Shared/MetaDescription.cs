@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Shared;
@@ -38,16 +39,16 @@ public sealed record MetaDescription
 
 public static class MetaDescriptionErrors
 {
-    public sealed record Empty : IError
+    public sealed record Empty : DomainError
     {
-        public string Code => "MetaDescription.Empty";
-        public string Message => "Meta description cannot be empty";
+        public override string Code => "MetaDescription.Empty";
+        public override string Message => "Meta description cannot be empty";
     }
 
-    public sealed record TooLong(string AttemptedValue) : IError
+    public sealed record TooLong([AttemptedValue] string Value) : DomainError
     {
-        public string Code => "MetaDescription.TooLong";
-        public string Message => $"Meta description cannot exceed {MaxLength} characters";
-        public int MaxLength => MetaDescription.MaxLength;
+        public override string Code => "MetaDescription.TooLong";
+        public override string Message => $"Meta description must be at most {MaxLength} characters, but '{Value}' has {Value.Length} characters";
+        public static int MaxLength => MetaDescription.MaxLength;
     }
 }

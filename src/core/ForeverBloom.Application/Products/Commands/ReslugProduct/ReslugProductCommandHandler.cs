@@ -1,10 +1,10 @@
-using ForeverBloom.Application.Abstractions;
 using ForeverBloom.Application.Abstractions.Data;
 using ForeverBloom.Application.Abstractions.Data.Repositories;
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.Application.Abstractions.Requests;
 using ForeverBloom.Application.Abstractions.SlugRegistry;
 using ForeverBloom.Application.Abstractions.Time;
-using ForeverBloom.Domain.Shared;
+using ForeverBloom.Domain.Catalog;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Products.Commands.ReslugProduct;
@@ -33,15 +33,6 @@ internal sealed class ReslugProductCommandHandler
         ReslugProductCommand command,
         CancellationToken cancellationToken)
     {
-        // Convert slug string to value object
-        var slugResult = Slug.Create(command.NewSlug);
-        if (slugResult.IsFailure)
-        {
-            return Result<ReslugProductResult>.Failure(slugResult.Error);
-        }
-
-        var newSlug = slugResult.Value;
-
         // Retrieve product by ID
         var product = await _productRepository.GetByIdAsync(command.ProductId, cancellationToken);
         if (product is null)
@@ -59,7 +50,7 @@ internal sealed class ReslugProductCommandHandler
         // Check if slug is available for this product to use
         // (allows reuse of product's own historical slugs)
         var isAvailable = await _slugRegistrationService.IsSlugAvailableForEntityAsync(
-            newSlug,
+            command.NewSlug,
             EntityType.Product,
             product.Id,
             cancellationToken);
@@ -67,11 +58,11 @@ internal sealed class ReslugProductCommandHandler
         if (!isAvailable)
         {
             return Result<ReslugProductResult>.Failure(
-                new ProductErrors.SlugNotAvailable(newSlug.Value));
+                new ProductErrors.SlugNotAvailable(command.NewSlug.Value));
         }
 
         // Change the product's slug
-        var updateResult = product.ChangeSlug(newSlug, _timeProvider.UtcNow);
+        var updateResult = product.ChangeSlug(command.NewSlug, _timeProvider.UtcNow);
         if (updateResult.IsFailure)
         {
             return Result<ReslugProductResult>.Failure(updateResult.Error);
@@ -86,7 +77,7 @@ internal sealed class ReslugProductCommandHandler
             await _slugRegistrationService.RegisterSlugAsync(
                 EntityType.Product,
                 product.Id,
-                newSlug,
+                command.NewSlug,
                 cancellationToken);
         }
 

@@ -34,24 +34,15 @@ internal sealed class CreateProductCommandHandler : ICommandHandler<CreateProduc
         CreateProductCommand command,
         CancellationToken cancellationToken)
     {
-        // Map command to value objects
-        var valueObjectsResult = command.AssembleValueObjects();
-        if (valueObjectsResult.IsFailure)
-        {
-            return Result<CreateProductResult>.Failure(valueObjectsResult.Error);
-        }
-
-        var valueObjects = valueObjectsResult.Value;
-
         // Slug must be available - cannot already be registered by any entity
         var slugAvailable = await _slugRegistrationService.IsSlugAvailableAsync(
-            valueObjects.Slug,
+            command.Slug,
             cancellationToken);
 
         if (!slugAvailable)
         {
             return Result<CreateProductResult>.Failure(
-                new ProductErrors.SlugNotAvailable(valueObjects.Slug.Value));
+                new ProductErrors.SlugNotAvailable(command.Slug.Value));
         }
 
         // Category must exist
@@ -66,17 +57,17 @@ internal sealed class CreateProductCommandHandler : ICommandHandler<CreateProduc
         }
 
         var productResult = Product.Create(
-            name: valueObjects.Name,
-            seoTitle: valueObjects.SeoTitle,
-            fullDescription: valueObjects.FullDescription,
-            metaDescription: valueObjects.MetaDescription,
-            slug: valueObjects.Slug,
+            name: command.Name,
+            slug: command.Slug,
             categoryId: command.CategoryId,
-            price: valueObjects.Price,
+            timestamp: _timeProvider.UtcNow,
+            seoTitle: command.SeoTitle,
+            fullDescription: command.FullDescription,
+            metaDescription: command.MetaDescription,
+            price: command.Price,
             isFeatured: command.IsFeatured,
             availabilityStatus: command.AvailabilityStatus,
-            timestamp: _timeProvider.UtcNow,
-            images: valueObjects.Images);
+            images: command.Images);
 
         if (productResult.IsFailure)
         {

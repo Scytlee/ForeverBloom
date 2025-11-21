@@ -1,4 +1,5 @@
 using ForeverBloom.Application.Abstractions.Data;
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.Application.Abstractions.Requests;
 using ForeverBloom.SharedKernel.Result;
 using MediatR;

@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Catalog;
@@ -53,22 +54,22 @@ public record UrlPath
 
 public static class UrlPathErrors
 {
-    public sealed record Empty : IError
+    public sealed record Empty : DomainError
     {
-        public string Code => "UrlPath.Empty";
-        public string Message => "URL path cannot be empty";
+        public override string Code => "UrlPath.Empty";
+        public override string Message => "URL path cannot be empty";
     }
 
-    public sealed record TooLong(string AttemptedPath) : IError
+    public sealed record TooLong([AttemptedValue] string Path) : DomainError
     {
-        public string Code => "UrlPath.TooLong";
-        public string Message => $"URL path cannot exceed {MaxLength} characters";
-        public int MaxLength => UrlPath.MaxLength;
+        public override string Code => "UrlPath.TooLong";
+        public override string Message => $"URL path must be at most {MaxLength} characters, but '{Path}' has {Path.Length} characters";
+        public static int MaxLength => UrlPath.MaxLength;
     }
 
-    public sealed record InvalidFormat(string AttemptedPath) : IError
+    public sealed record InvalidFormat([AttemptedValue] string Path) : DomainError
     {
-        public string Code => "UrlPath.InvalidFormat";
-        public string Message => $"URL path '{AttemptedPath}' is not a valid relative URL";
+        public override string Code => "UrlPath.InvalidFormat";
+        public override string Message => $"URL path '{Path}' is not a valid relative URL";
     }
 }

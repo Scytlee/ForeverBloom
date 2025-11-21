@@ -1,16 +1,16 @@
 using ForeverBloom.WebApi.Authentication;
-using ForeverBloom.WebApi.Endpoints.Categories.ArchiveCategory;
-using ForeverBloom.WebApi.Endpoints.Categories.BrowseCatalogCategoryTree;
-using ForeverBloom.WebApi.Endpoints.Categories.CreateCategory;
-using ForeverBloom.WebApi.Endpoints.Categories.DeleteCategory;
-using ForeverBloom.WebApi.Endpoints.Categories.GetCategoriesSitemapData;
-using ForeverBloom.WebApi.Endpoints.Categories.GetCategoryById;
-using ForeverBloom.WebApi.Endpoints.Categories.GetCategoryBySlug;
-using ForeverBloom.WebApi.Endpoints.Categories.ListCategories;
-using ForeverBloom.WebApi.Endpoints.Categories.ReparentCategory;
-using ForeverBloom.WebApi.Endpoints.Categories.ReslugCategory;
-using ForeverBloom.WebApi.Endpoints.Categories.RestoreCategory;
-using ForeverBloom.WebApi.Endpoints.Categories.UpdateCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.ArchiveCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.CreateCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.DeleteCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.GetCategoryById;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.ListCategories;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.ReparentCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.ReslugCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.RestoreCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Admin.UpdateCategory;
+using ForeverBloom.WebApi.Endpoints.Categories.Public.BrowseCatalogCategoryTree;
+using ForeverBloom.WebApi.Endpoints.Categories.Public.GetCategoriesSitemapData;
+using ForeverBloom.WebApi.Endpoints.Categories.Public.GetCategoryBySlug;
 
 namespace ForeverBloom.WebApi.Endpoints.Categories;
 
@@ -66,7 +66,8 @@ public static class CategoryEndpointsModule
     public static IEndpointRouteBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
         var publicEndpointsGroup = app.MapGroup("/categories")
-            .WithTags(Tags.Categories, Tags.Public);
+            .WithTags(Tags.Categories, Tags.Public)
+            .RequireAuthorization(ApiKeyAuthenticationDefaults.FrontendAccessPolicyName);
         publicEndpointsGroup.MapBrowseCatalogCategoryTreeEndpoint();
         publicEndpointsGroup.MapGetCategoryBySlugEndpoint();
         publicEndpointsGroup.MapGetCategoriesSitemapDataEndpoint();

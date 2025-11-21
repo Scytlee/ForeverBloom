@@ -162,9 +162,9 @@ internal sealed class ListProductsQueryHandler
         return (query, parameters);
     }
 
-    private static string BuildOrderByClause(SortProperty[]? sortBy)
+    private static string BuildOrderByClause(SortProperty[] sortBy)
     {
-        if (sortBy is null || sortBy.Length == 0)
+        if (sortBy.Length == 0)
         {
             // Default sorting: created_at descending, then id for stable ordering
             return "ORDER BY created_at DESC, id";

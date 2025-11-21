@@ -1,8 +1,9 @@
-using ForeverBloom.Application.Abstractions;
 using ForeverBloom.Application.Abstractions.Data;
 using ForeverBloom.Application.Abstractions.Data.Repositories;
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.Application.Abstractions.Requests;
 using ForeverBloom.Application.Abstractions.Time;
+using ForeverBloom.Domain.Catalog;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Categories.Commands.UpdateCategory;
@@ -28,14 +29,6 @@ internal sealed class UpdateCategoryCommandHandler
         UpdateCategoryCommand command,
         CancellationToken cancellationToken)
     {
-        var valueObjectsResult = command.AssembleValueObjects();
-        if (valueObjectsResult.IsFailure)
-        {
-            return Result<UpdateCategoryResult>.Failure(valueObjectsResult.Error);
-        }
-
-        var valueObjects = valueObjectsResult.Value;
-
         var category = await _categoryRepository.GetByIdAsync(command.CategoryId, cancellationToken);
         if (category is null)
         {
@@ -49,12 +42,12 @@ internal sealed class UpdateCategoryCommandHandler
         }
 
         var updateResult = category.Update(
-            valueObjects.Name,
-            valueObjects.Description,
-            valueObjects.Image,
+            _timeProvider.UtcNow,
+            command.Name,
+            command.Description,
+            command.Image,
             command.DisplayOrder,
-            command.PublishStatus,
-            _timeProvider.UtcNow);
+            command.PublishStatus);
 
         if (updateResult.IsFailure)
         {

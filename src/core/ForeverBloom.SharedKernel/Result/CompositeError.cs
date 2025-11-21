@@ -34,4 +34,10 @@ public sealed record CompositeError : IError
 
     public string Code => "Error.Composite";
     public string Message => "One or more errors occurred.";
+
+    public override string ToString()
+    {
+        var errorMessages = string.Join("; ", Errors.Select(e => e.ToString()));
+        return $"{Code}: {Message} [{errorMessages}]";
+    }
 }

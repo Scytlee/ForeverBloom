@@ -1,8 +1,9 @@
-using ForeverBloom.Application.Abstractions;
 using ForeverBloom.Application.Abstractions.Data;
 using ForeverBloom.Application.Abstractions.Data.Repositories;
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.Application.Abstractions.Requests;
 using ForeverBloom.Application.Abstractions.Time;
+using ForeverBloom.Domain.Catalog;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Products.Commands.UpdateProduct;
@@ -31,14 +32,6 @@ internal sealed class UpdateProductCommandHandler
         UpdateProductCommand command,
         CancellationToken cancellationToken)
     {
-        var valueObjectsResult = command.AssembleValueObjects();
-        if (valueObjectsResult.IsFailure)
-        {
-            return Result<UpdateProductResult>.Failure(valueObjectsResult.Error);
-        }
-
-        var valueObjects = valueObjectsResult.Value;
-
         var product = await _productRepository.GetByIdAsync(command.ProductId, cancellationToken);
         if (product is null)
         {
@@ -63,16 +56,16 @@ internal sealed class UpdateProductCommandHandler
         }
 
         var updateResult = product.Update(
-            valueObjects.Name,
-            valueObjects.SeoTitle,
-            valueObjects.FullDescription,
-            valueObjects.MetaDescription,
+            _timeProvider.UtcNow,
+            command.Name,
             command.CategoryId,
-            valueObjects.Price,
+            command.SeoTitle,
+            command.FullDescription,
+            command.MetaDescription,
+            command.Price,
             command.IsFeatured,
             command.Availability,
-            command.PublishStatus,
-            _timeProvider.UtcNow);
+            command.PublishStatus);
 
         if (updateResult.IsFailure)
         {

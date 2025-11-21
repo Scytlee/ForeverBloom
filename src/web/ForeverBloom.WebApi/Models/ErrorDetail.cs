@@ -9,7 +9,7 @@ namespace ForeverBloom.WebApi.Models;
 /// Represents a single error detail with code, message, and additional properties as extensions.
 /// Used for errors in BadRequestProblemDetails.
 /// </summary>
-public class ErrorDetail
+public sealed class ErrorDetail
 {
     [JsonPropertyName("code")]
     public required string Code { get; init; }
@@ -39,7 +39,10 @@ public class ErrorDetail
         }
 
         var properties = error.GetType().GetProperties()
-            .Where(p => p.Name != nameof(Code) && p.Name != nameof(Message) && p.CanRead);
+            .Where(p => p.Name != nameof(Code)
+                     && p.Name != nameof(Message)
+                     && p.Name != "EqualityContract"  // Skip record infrastructure
+                     && p.CanRead);
 
         var extensions = BuildExtensionsDictionary(properties, error);
 
@@ -57,19 +60,64 @@ public class ErrorDetail
     {
         var extensions = new Dictionary<string, object?>();
 
-        foreach (var property in properties)
+        var propertyDetails = GetPropertyDetails(properties, error);
+
+        foreach (var propertyDetail in propertyDetails)
         {
-            var value = property.GetValue(error);
+            var value = propertyDetail.Property.GetValue(error);
             if (value is null)
             {
                 continue;
             }
 
-            // Convert property name to camelCase
-            var propertyName = property.Name.ToCamelCase();
-            extensions[propertyName] = value;
+            var jsonPropertyName = propertyDetail switch
+            {
+                { IsAttemptedValue: true } => "attemptedValue",
+                { IsCurrentValue: true } => "currentValue",
+                _ => propertyDetail.Property.Name.ToCamelCase()
+            };
+
+            extensions[jsonPropertyName] = value;
         }
 
         return extensions;
+    }
+
+    private static IEnumerable<PropertyDetails> GetPropertyDetails(
+        IEnumerable<PropertyInfo> properties,
+        IError error)
+    {
+        // For convenience, attributes might be defined on constructor parameters instead of properties.
+        // To avoid having to include the "property:" prefix on attributes or declaring explicit properties,
+        // we're checking both constructors and properties for attributes, and zipping the results together.
+        return error.GetType().GetConstructors()
+            // We assume that error types will always have a single constructor
+            // Worst case scenario is that only code and message are serialized
+            .FirstOrDefault()?
+            .GetParameters()
+            // Merge constructor parameter attributes with property attributes
+            .RightJoin(properties,
+                parameter => parameter.Name!,
+                property => property.Name,
+                (parameter, property) => (
+                    Property: property,
+                    Attributes: parameter is null
+                        ? property.CustomAttributes.ToArray()
+                        : property.CustomAttributes.Concat(parameter.CustomAttributes).ToArray()))
+            .Select(p => new PropertyDetails
+            {
+                Property = p.Property,
+                IsAttemptedValue = p.Attributes.Any(a => a.AttributeType == typeof(AttemptedValueAttribute)),
+                IsCurrentValue = p.Attributes.Any(a => a.AttributeType == typeof(CurrentValueAttribute)),
+                // IsMetaData = p.Attributes.Any(a => a.AttributeType == typeof(MetadataAttribute))
+            }) ?? [];
+    }
+
+    private sealed class PropertyDetails
+    {
+        public required PropertyInfo Property { get; init; } = null!;
+        public required bool IsAttemptedValue { get; init; }
+        public required bool IsCurrentValue { get; init; }
+        // public required bool IsMetaData { get; init; }
     }
 }

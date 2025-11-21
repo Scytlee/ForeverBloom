@@ -1,33 +1,57 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.Domain.Shared;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Catalog;
 
 /// <summary>
-/// Represents a hierarchical path composed of dot-delimited slugs, equivalent to PostgreSQL's ltree.
+/// Represents a hierarchical path composed of dot-delimited slugs.
 /// </summary>
 public sealed record HierarchicalPath
 {
     public const int MaxDepth = 10;
     public const char Separator = '.';
 
-    public string Value { get; }
-    public int Depth { get; }
-
-    private IReadOnlyCollection<string> Segments { get; }
-
-    private HierarchicalPath(string value, params IEnumerable<string> segments)
+    public string Value
     {
-        Segments = segments.ToArray();
-        Value = value;
-        Depth = Segments.Count;
+        get
+        {
+            return field ??= string.Join(Separator, Segments.Select(s => s.Value));
+        }
     }
 
-    private HierarchicalPath(params IEnumerable<string> segments)
+    public int Depth { get; }
+
+    private Slug[] Segments { get; }
+
+    private HierarchicalPath(params Slug[] slugs)
     {
-        Segments = segments.ToArray();
-        Value = string.Join(Separator, Segments);
-        Depth = Segments.Count;
+        Segments = slugs;
+        Depth = Segments.Length;
+    }
+
+    /// <summary>
+    /// Creates a HierarchicalPath from a sequence of slugs.
+    /// </summary>
+    /// <param name="slugs">The slugs representing the hierarchical path.</param>
+    /// <returns>A Result containing either the HierarchicalPath or validation errors.</returns>
+    public static Result<HierarchicalPath> FromSlugs(params Slug[] slugs)
+    {
+        var errors = new List<IError>();
+
+        if (slugs.Length == 0)
+        {
+            errors.Add(new HierarchicalPathErrors.Empty());
+        }
+
+        if (slugs.Length > MaxDepth)
+        {
+            errors.Add(new HierarchicalPathErrors.TooDeep(slugs.Length));
+        }
+
+        return Result<HierarchicalPath>.FromValidation(
+            errors,
+            () => new HierarchicalPath(slugs));
     }
 
     /// <summary>
@@ -37,23 +61,21 @@ public sealed record HierarchicalPath
     /// <returns>A Result containing either a valid HierarchicalPath or validation errors.</returns>
     public static Result<HierarchicalPath> FromString(string value)
     {
-        var errors = new List<IError>();
-
         if (string.IsNullOrWhiteSpace(value))
         {
             return Result<HierarchicalPath>.Failure(new HierarchicalPathErrors.Empty());
         }
 
-        // Split by separator without filtering
+        var errors = new List<IError>();
         var segments = value.Split(Separator);
 
-        // Check depth
         if (segments.Length > MaxDepth)
         {
             errors.Add(new HierarchicalPathErrors.TooDeep(segments.Length));
         }
 
-        // Validate each segment using Slug validation
+        // Validate each segment and collect slugs
+        var slugs = new List<Slug>();
         for (var i = 0; i < segments.Length; i++)
         {
             var segmentResult = Slug.Create(segments[i]);
@@ -61,9 +83,15 @@ public sealed record HierarchicalPath
             {
                 errors.Add(new HierarchicalPathErrors.InvalidSegment(i, segments[i]));
             }
+            else
+            {
+                slugs.Add(segmentResult.Value);
+            }
         }
 
-        return Result<HierarchicalPath>.FromValidation(errors, () => new HierarchicalPath(value, segments));
+        return Result<HierarchicalPath>.FromValidation(
+            errors,
+            () => new HierarchicalPath(slugs.ToArray()));
     }
 
     /// <summary>
@@ -74,14 +102,17 @@ public sealed record HierarchicalPath
     /// <returns>A Result containing either the combined HierarchicalPath or validation errors.</returns>
     public static Result<HierarchicalPath> FromParent(HierarchicalPath parent, Slug childSlug)
     {
-        // Early depth validation
+        var errors = new List<IError>();
+
         var newDepth = parent.Depth + 1;
         if (newDepth > MaxDepth)
         {
-            return Result<HierarchicalPath>.Failure(new HierarchicalPathErrors.TooDeep(newDepth));
+            errors.Add(new HierarchicalPathErrors.TooDeep(newDepth));
         }
 
-        return Result<HierarchicalPath>.Success(new HierarchicalPath(parent.Segments.Append(childSlug.Value)));
+        return Result<HierarchicalPath>.FromValidation(
+            errors,
+            () => new HierarchicalPath([.. parent.Segments, childSlug]));
     }
 
     /// <summary>
@@ -90,13 +121,13 @@ public sealed record HierarchicalPath
     /// </summary>
     /// <param name="newSlug">The slug for the last segment.</param>
     /// <returns>A Result containing the new path with the specified slug.</returns>
-    public Result<HierarchicalPath> WithSlug(Slug newSlug)
+    public HierarchicalPath WithSlug(Slug newSlug)
     {
-        var newSegments =
-            Depth == 1 ? [newSlug.Value]
-            : Segments.Take(Depth - 1).Append(newSlug.Value);
+        var newSegments = Depth == 1
+            ? [newSlug]
+            : Segments.Take(Depth - 1).Append(newSlug).ToArray();
 
-        return Result<HierarchicalPath>.Success(new HierarchicalPath(newSegments));
+        return new HierarchicalPath(newSegments);
     }
 
     /// <summary>
@@ -156,9 +187,6 @@ public sealed record HierarchicalPath
         // Extract tail segments (segments after oldBase)
         var tailSegments = path.Segments.Skip(oldBase.Depth).ToArray();
 
-        // Combine newBase segments with tail segments
-        var rebasedSegments = newBase.Segments.Concat(tailSegments);
-
         // Validate depth constraints
         var newDepth = newBase.Depth + tailSegments.Length;
         if (newDepth > MaxDepth)
@@ -167,7 +195,10 @@ public sealed record HierarchicalPath
                 new HierarchicalPathErrors.TooDeep(newDepth));
         }
 
-        return Result<HierarchicalPath>.Success(new HierarchicalPath(rebasedSegments));
+        // Combine newBase segments with tail segments
+        var rebasedSegments = newBase.Segments.Concat(tailSegments).ToArray();
+
+        return FromSlugs(rebasedSegments);
     }
 
     /// <summary>
@@ -187,28 +218,28 @@ public sealed record HierarchicalPath
 
 public static class HierarchicalPathErrors
 {
-    public sealed record Empty : IError
+    public sealed record Empty : DomainError
     {
-        public string Code => "HierarchicalPath.Empty";
-        public string Message => "Hierarchical path cannot be empty";
+        public override string Code => "HierarchicalPath.Empty";
+        public override string Message => "Hierarchical path cannot be empty";
     }
 
-    public sealed record TooDeep(int ActualDepth) : IError
+    public sealed record TooDeep([AttemptedValue] int Depth) : DomainError
     {
-        public string Code => "HierarchicalPath.TooDeep";
-        public string Message => $"Hierarchical path depth of {ActualDepth} exceeds maximum depth of {MaxDepth}";
+        public override string Code => "HierarchicalPath.TooDeep";
+        public override string Message => $"Hierarchical path depth must be at most {MaxDepth}, but was {Depth}";
         public static int MaxDepth => HierarchicalPath.MaxDepth;
     }
 
-    public sealed record InvalidSegment(int SegmentIndex, string SegmentValue) : IError
+    public sealed record InvalidSegment(int SegmentIndex, [AttemptedValue] string SegmentValue) : DomainError
     {
-        public string Code => "HierarchicalPath.InvalidSegment";
-        public string Message => $"Segment at index {SegmentIndex} ('{SegmentValue}') is invalid";
+        public override string Code => "HierarchicalPath.InvalidSegment";
+        public override string Message => $"Segment at index {SegmentIndex} ('{SegmentValue}') is invalid";
     }
 
-    public sealed record OldBaseNotAncestor(string PathValue, string OldBaseValue) : IError
+    public sealed record OldBaseNotAncestor([AttemptedValue] string Path, string OldBase) : DomainError
     {
-        public string Code => "HierarchicalPath.OldBaseNotAncestor";
-        public string Message => $"Cannot rebase path '{PathValue}' because '{OldBaseValue}' is not an ancestor of the path";
+        public override string Code => "HierarchicalPath.OldBaseNotAncestor";
+        public override string Message => $"Cannot rebase path '{Path}' because '{OldBase}' is not an ancestor of the path";
     }
 }

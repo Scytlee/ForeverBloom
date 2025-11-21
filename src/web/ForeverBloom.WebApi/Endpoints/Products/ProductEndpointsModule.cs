@@ -1,16 +1,16 @@
 using ForeverBloom.WebApi.Authentication;
-using ForeverBloom.WebApi.Endpoints.Products.ArchiveProduct;
-using ForeverBloom.WebApi.Endpoints.Products.BrowseCatalogProducts;
-using ForeverBloom.WebApi.Endpoints.Products.CreateProduct;
-using ForeverBloom.WebApi.Endpoints.Products.DeleteProduct;
-using ForeverBloom.WebApi.Endpoints.Products.GetProductById;
-using ForeverBloom.WebApi.Endpoints.Products.GetProductBySlug;
-using ForeverBloom.WebApi.Endpoints.Products.GetProductsSitemapData;
-using ForeverBloom.WebApi.Endpoints.Products.ListProducts;
-using ForeverBloom.WebApi.Endpoints.Products.ReslugProduct;
-using ForeverBloom.WebApi.Endpoints.Products.RestoreProduct;
-using ForeverBloom.WebApi.Endpoints.Products.UpdateProduct;
-using ForeverBloom.WebApi.Endpoints.Products.UpdateProductImages;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.ArchiveProduct;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.CreateProduct;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.DeleteProduct;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.GetProductById;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.ListProducts;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.ReslugProduct;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.RestoreProduct;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.UpdateProduct;
+using ForeverBloom.WebApi.Endpoints.Products.Admin.UpdateProductImages;
+using ForeverBloom.WebApi.Endpoints.Products.Public.BrowseCatalogProducts;
+using ForeverBloom.WebApi.Endpoints.Products.Public.GetProductBySlug;
+using ForeverBloom.WebApi.Endpoints.Products.Public.GetProductsSitemapData;
 
 namespace ForeverBloom.WebApi.Endpoints.Products;
 
@@ -68,7 +68,8 @@ public static class ProductEndpointsModule
     public static IEndpointRouteBuilder MapProductEndpoints(this IEndpointRouteBuilder app)
     {
         var publicEndpointsGroup = app.MapGroup("/products")
-            .WithTags(Tags.Products, Tags.Public);
+            .WithTags(Tags.Products, Tags.Public)
+            .RequireAuthorization(ApiKeyAuthenticationDefaults.FrontendAccessPolicyName);
         publicEndpointsGroup.MapBrowseCatalogProductsEndpoint();
         publicEndpointsGroup.MapGetProductBySlugEndpoint();
         publicEndpointsGroup.MapGetProductsSitemapDataEndpoint();

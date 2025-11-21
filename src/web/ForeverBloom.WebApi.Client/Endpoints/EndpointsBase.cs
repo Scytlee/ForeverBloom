@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using ForeverBloom.SharedKernel.Result;
 using ForeverBloom.WebApi.Client.Contracts;
 using ForeverBloom.WebApi.Client.Endpoints.Internal;
 using ForeverBloom.WebApi.Client.Serialization;
@@ -33,7 +32,7 @@ internal abstract class EndpointsBase<T> where T : class
         {
             var responseContent = await response.Content.ReadFromJsonAsync<TResponse>(_serializerOptions, cancellationToken);
             return responseContent is null
-              ? HttpResult<TResponse>.Failure(new Error { Code = "Api.NullResponse", Message = "API returned a success status code but the response body was empty or null." }, response.StatusCode)
+              ? HttpResult<TResponse>.Failure(new ApiClientError("Api.NullResponse", "API returned a success status code but the response body was empty or null."), response.StatusCode)
               : HttpResult<TResponse>.Success(responseContent, response.StatusCode);
         }
 
@@ -43,9 +42,9 @@ internal abstract class EndpointsBase<T> where T : class
             var location = response.Headers.Location;
             return location is not null
               // Successfully captured the redirect information
-              ? HttpResult<TResponse>.Failure(new Error { Code = "Api.Redirect", Message = "API returned a redirect status code." }, response.StatusCode, location: location.ToString())
+              ? HttpResult<TResponse>.Failure(new ApiClientError("Api.Redirect", "API returned a redirect status code."), response.StatusCode, location: location.ToString())
               // A 3xx response without a Location header is an error condition
-              : HttpResult<TResponse>.Failure(new Error { Code = $"Api.Http.{(int)response.StatusCode}", Message = "Redirect response received without a Location header." }, response.StatusCode);
+              : HttpResult<TResponse>.Failure(new ApiClientError($"Api.Http.{(int)response.StatusCode}", "Redirect response received without a Location header."), response.StatusCode);
         }
 
         // Handle client error responses (4xx) and server error responses (5xx)
@@ -55,37 +54,19 @@ internal abstract class EndpointsBase<T> where T : class
             using var jsonDoc = JsonDocument.Parse(errorContent);
             var root = jsonDoc.RootElement;
 
-            // Inspect the "errors" property structure to determine error type
-            if (root.TryGetProperty("errors", out var errorsProperty))
+            if (root.TryGetProperty("errors", out var errorsProperty)
+                && errorsProperty.ValueKind == JsonValueKind.Array)
             {
-                switch (errorsProperty.ValueKind)
+                // Case 1: Error array exists -> BadRequestProblemDetails
+                var badRequestProblem = root.Deserialize<BadRequestProblemDetails>(_serializerOptions);
+                if (badRequestProblem?.Errors is not null)
                 {
-                    // Case 1: errors is an object (dictionary) -> ValidationProblemDetails
-                    case JsonValueKind.Object:
-                        {
-                            var validationProblem = root.Deserialize<ValidationProblemDetails>(_serializerOptions);
-                            if (validationProblem?.Errors is not null)
-                            {
-                                return HttpResult<TResponse>.Failure(new ValidationError(validationProblem.Errors), response.StatusCode);
-                            }
-
-                            break;
-                        }
-                    // Case 2: errors is an array -> BadRequestProblemDetails
-                    case JsonValueKind.Array:
-                        {
-                            var badRequestProblem = root.Deserialize<BadRequestProblemDetails>(_serializerOptions);
-                            if (badRequestProblem?.Errors is not null)
-                            {
-                                return HttpResult<TResponse>.Failure(new BadRequestError(badRequestProblem.Errors), response.StatusCode);
-                            }
-
-                            break;
-                        }
+                    return HttpResult<TResponse>.Failure(new BadRequestError(badRequestProblem.Errors),
+                        response.StatusCode);
                 }
             }
 
-            // Case 3: Standard ProblemDetails (no errors property, or errors property wasn't object/array)
+            // Case 2: Standard ProblemDetails (no errors property, or errors property wasn't object/array)
             var problemDetails = root.Deserialize<ProblemDetails>(_serializerOptions);
             if (problemDetails is not null)
             {
@@ -93,7 +74,7 @@ internal abstract class EndpointsBase<T> where T : class
                 var errorMessage = problemDetails.Detail ?? problemDetails.Title ?? "An API error occurred";
                 Logger.LogWarning("API call failed with status code {StatusCode}: {ErrorMessage}. RequestId: {RequestId}, TraceId: {TraceId}",
                     (int)response.StatusCode, errorMessage, problemDetails.RequestId, problemDetails.TraceId);
-                return HttpResult<TResponse>.Failure(new Error { Code = errorCode, Message = errorMessage }, response.StatusCode);
+                return HttpResult<TResponse>.Failure(new ApiClientError(errorCode, errorMessage), response.StatusCode);
             }
         }
         catch (JsonException ex)
@@ -105,7 +86,7 @@ internal abstract class EndpointsBase<T> where T : class
         var fallbackErrorCode = $"Api.Http.{(int)response.StatusCode}";
         var fallbackErrorMessage = $"API call failed with status code {response.StatusCode} ({response.ReasonPhrase})";
         Logger.LogWarning("API call failed with status code {StatusCode} ({ReasonPhrase})", response.StatusCode, response.ReasonPhrase);
-        return HttpResult<TResponse>.Failure(new Error { Code = fallbackErrorCode, Message = fallbackErrorMessage }, response.StatusCode);
+        return HttpResult<TResponse>.Failure(new ApiClientError(fallbackErrorCode, fallbackErrorMessage), response.StatusCode);
     }
 
     protected async Task<HttpResult<TResponse>> GetJsonAsync<TResponse>(Uri? requestUri, CancellationToken cancellationToken = default) where TResponse : notnull
@@ -119,24 +100,22 @@ internal abstract class EndpointsBase<T> where T : class
         {
             Logger.LogError(ex, "HTTP request failed for {RequestUri}", requestUri);
             return HttpResult<TResponse>.Failure(
-                new ClientError
-                {
-                    Code = "Api.NetworkError",
-                    Message = "A network error occurred while communicating with the API.",
-                    Exception = ex
-                },
+                new ApiClientError(
+                    "Api.NetworkError",
+                    "A network error occurred while communicating with the API."),
                 HttpStatusCode.ServiceUnavailable);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An unexpected error occurred during GET request to {RequestUri}", requestUri);
+            var unexpectedMessage = string.IsNullOrWhiteSpace(ex.Message)
+                ? "An unexpected error occurred while communicating with the API."
+                : $"An unexpected error occurred while communicating with the API: {ex.Message}";
+
             return HttpResult<TResponse>.Failure(
-                new ClientError
-                {
-                    Code = "General.Exception",
-                    Message = ex.Message,
-                    Exception = ex
-                },
+                new ApiClientError(
+                    "General.Exception",
+                    unexpectedMessage),
                 HttpStatusCode.ServiceUnavailable);
         }
     }

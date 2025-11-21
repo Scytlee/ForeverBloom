@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Catalog;
@@ -71,17 +72,23 @@ public sealed record Image
 
 public static class ImageErrors
 {
-    public sealed record InvalidExtension(string AttemptedPath) : IError
+    public sealed record InvalidExtension([AttemptedValue] string Path) : DomainError
     {
-        public string Code => "Image.InvalidExtension";
-        public string Message => $"Image path must have a valid image extension ({string.Join(", ", AllowedExtensions)})";
-        public string[] AllowedExtensions => Image.AllowedExtensions;
+        public override string Code => "Image.InvalidExtension";
+        public override string Message => $"Image path '{Path}' must have a valid image extension ({string.Join(", ", AllowedExtensions)})";
+        public static string[] AllowedExtensions => Image.AllowedExtensions;
     }
 
-    public sealed record AltTextTooLong(string AttemptedText) : IError
+    public sealed record AltTextTooLong([AttemptedValue] string Text) : DomainError
     {
-        public string Code => "Image.AltTextTooLong";
-        public string Message => $"Alt text cannot exceed {AltTextMaxLength} characters";
-        public int AltTextMaxLength => Image.AltTextMaxLength;
+        public override string Code => "Image.AltTextTooLong";
+        public override string Message => $"Alt text must be at most {AltTextMaxLength} characters, but '{Text}' has {Text.Length} characters";
+        public static int AltTextMaxLength => Image.AltTextMaxLength;
+    }
+
+    public sealed record CannotUpdatePartially : DomainError
+    {
+        public override string Code => "Image.CannotUpdatePartially";
+        public override string Message => "When updating an image, both path and alt text must be provided together";
     }
 }

@@ -1,12 +1,13 @@
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Categories.Queries.BrowseCatalogCategoryTree;
 
-internal static class BrowseCatalogCategoryTreeErrors
+public static class BrowseCatalogCategoryTreeErrors
 {
-    internal sealed record DepthOutOfRange(int AttemptedDepth) : IError
+    public sealed record LevelsOutOfRange([AttemptedValue] int Levels) : ApplicationError
     {
-        public string Code => "BrowseCatalogCategoryTree.DepthOutOfRange";
-        public string Message => "Depth must be greater than or equal to 0.";
+        public override string Code => "BrowseCatalogCategoryTree.LevelsOutOfRange";
+        public override string Message => $"Levels must be greater than or equal to 0, but was {Levels}";
     }
 }

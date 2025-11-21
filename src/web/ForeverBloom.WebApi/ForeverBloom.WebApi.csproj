@@ -26,4 +26,8 @@
     <ProjectReference Include="..\..\infrastructure\ForeverBloom.Infrastructure\ForeverBloom.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
+  </ItemGroup>
+
 </Project>

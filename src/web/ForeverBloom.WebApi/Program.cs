@@ -19,7 +19,12 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 // Create a bootstrap logger to log startup messages
 var loggerConfiguration = new LoggerConfiguration().WriteTo.Console();
-if (args.Contains("--environment=Testing"))
+var isTestingEnvironment = args.Contains("--environment=Testing", StringComparer.OrdinalIgnoreCase)
+                           || string.Equals(
+                               Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                               "Testing",
+                               StringComparison.OrdinalIgnoreCase);
+if (isTestingEnvironment)
 {
     // Bootstrap logger is not thread-safe and causes errors when running multiple integration tests in parallel
     // This is a workaround to prevent that
@@ -242,11 +247,10 @@ finally
 
 return 0;
 
-// TODO: Possibly still needed for tests
-// // This fixes the inconsistent accessibility issue in test projects
-// // ReSharper disable once ClassNeverInstantiated.Global
-// namespace ForeverBloom.Api
-// {
-//     // ReSharper disable once PartialTypeWithSinglePart
-//     public partial class Program;
-// }
+// This fixes the inconsistent accessibility issue in test projects
+namespace ForeverBloom.WebApi
+{
+    // ReSharper disable once PartialTypeWithSinglePart
+    // ReSharper disable once UnusedType.Global
+    public partial class Program;
+}

@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Catalog;
@@ -38,16 +39,16 @@ public sealed record ProductName
 
 public static class ProductNameErrors
 {
-    public sealed record Required : IError
+    public sealed record Required : DomainError
     {
-        public string Code => "ProductName.Required";
-        public string Message => "Product name is required";
+        public override string Code => "ProductName.Required";
+        public override string Message => "Product name is required";
     }
 
-    public sealed record TooLong(string AttemptedValue) : IError
+    public sealed record TooLong([AttemptedValue] string Value) : DomainError
     {
-        public string Code => "ProductName.TooLong";
-        public string Message => $"Product name cannot exceed {MaxLength} characters";
-        public int MaxLength => ProductName.MaxLength;
+        public override string Code => "ProductName.TooLong";
+        public override string Message => $"Product name must be at most {MaxLength} characters, but '{Value}' has {Value.Length} characters";
+        public static int MaxLength => ProductName.MaxLength;
     }
 }

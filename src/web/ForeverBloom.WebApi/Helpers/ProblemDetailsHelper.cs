@@ -25,21 +25,6 @@ public static class ProblemDetailsHelper
     }
 
     /// <summary>
-    /// Creates a ValidationProblemDetails object with a status code and a collection of validation errors.
-    /// </summary>
-    /// <param name="statusCode">The status code of the HTTP response.</param>
-    /// <param name="errors">A dictionary containing validation errors where the key represents the field, and the value is an array of ValidationErrorDetail objects.</param>
-    /// <returns>A ValidationProblemDetails object containing type, title, status, and validation error details.</returns>
-    public static ValidationProblemDetails CreateValidationProblemDetails(int statusCode,
-      IDictionary<string, ValidationErrorDetail[]> errors)
-    {
-        var problemDetails = new ValidationProblemDetails(errors);
-        ApplyProblemDetailsDefaults(problemDetails, statusCode);
-
-        return problemDetails;
-    }
-
-    /// <summary>
     /// Creates a BadRequestProblemDetails object with a status code and a collection of domain errors.
     /// </summary>
     /// <param name="statusCode">The status code of the HTTP response.</param>

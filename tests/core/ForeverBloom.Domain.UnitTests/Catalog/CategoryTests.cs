@@ -18,15 +18,7 @@ public sealed class CategoryTests
         var slug = SlugFactory.Create("test-category");
         var path = HierarchicalPathFactory.Create("test-category");
 
-        var result = Category.Create(
-            name,
-            description: null,
-            slug,
-            image: null,
-            path,
-            parentCategoryId: null,
-            displayOrder: 0,
-            TestTimestamp);
+        var result = Category.Create(name, slug, path, TestTimestamp);
 
         result.Should().BeSuccess();
         var category = result.Value!;
@@ -55,13 +47,13 @@ public sealed class CategoryTests
 
         var result = Category.Create(
             name,
-            description,
             slug,
-            image,
             path,
+            TestTimestamp,
+            description,
+            image,
             parentCategoryId,
-            displayOrder,
-            TestTimestamp);
+            displayOrder);
 
         result.Should().BeSuccess();
         var category = result.Value!;
@@ -87,17 +79,14 @@ public sealed class CategoryTests
 
         var result = Category.Create(
             name,
-            description: null,
             slug,
-            image: null,
             path,
-            parentCategoryId,
-            displayOrder: 0,
-            TestTimestamp);
+            TestTimestamp,
+            parentCategoryId: parentCategoryId);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<CategoryErrors.ParentCategoryIdInvalid>();
-        error.AttemptedId.Should().Be(parentCategoryId);
+        error.Id.Should().Be(parentCategoryId);
     }
 
     [Fact]
@@ -107,12 +96,8 @@ public sealed class CategoryTests
         var newName = SeoTitleFactory.Create("Updated Category");
 
         var result = category.Update(
-            name: newName,
-            description: default,
-            image: default,
-            displayOrder: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            name: newName);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -127,12 +112,8 @@ public sealed class CategoryTests
         var newDescription = MetaDescriptionFactory.Create("Updated description");
 
         var result = category.Update(
-            name: default,
-            description: newDescription,
-            image: default,
-            displayOrder: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            description: newDescription);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -145,12 +126,8 @@ public sealed class CategoryTests
         var category = CategoryFactory.Create(TestTimestamp, description: "Test description");
 
         var result = category.Update(
-            name: default,
-            description: Optional<MetaDescription?>.FromValue(null),
-            image: default,
-            displayOrder: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            description: Optional<MetaDescription?>.FromValue(null));
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -164,12 +141,8 @@ public sealed class CategoryTests
         var newImage = ImageFactory.Create("/images/new-category.jpg");
 
         var result = category.Update(
-            name: default,
-            description: default,
-            image: newImage,
-            displayOrder: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            image: newImage);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -182,12 +155,8 @@ public sealed class CategoryTests
         var category = CategoryFactory.Create(TestTimestamp, imagePath: "/images/category.jpg");
 
         var result = category.Update(
-            name: default,
-            description: default,
-            image: Optional<Image?>.FromValue(null),
-            displayOrder: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            image: Optional<Image?>.FromValue(null));
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -201,12 +170,8 @@ public sealed class CategoryTests
         const int newDisplayOrder = 42;
 
         var result = category.Update(
-            name: default,
-            description: default,
-            image: default,
-            displayOrder: newDisplayOrder,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            displayOrder: newDisplayOrder);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -220,12 +185,8 @@ public sealed class CategoryTests
         var newStatus = PublishStatus.Published;
 
         var result = category.Update(
-            name: default,
-            description: default,
-            image: default,
-            displayOrder: default,
-            publishStatus: newStatus,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            publishStatus: newStatus);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -241,12 +202,10 @@ public sealed class CategoryTests
         const int newDisplayOrder = 5;
 
         var result = category.Update(
+            TestTimestamp.AddHours(1),
             name: newName,
             description: newDescription,
-            image: default,
-            displayOrder: newDisplayOrder,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            displayOrder: newDisplayOrder);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -261,11 +220,6 @@ public sealed class CategoryTests
         var category = CategoryFactory.Create(TestTimestamp);
 
         var result = category.Update(
-            name: default,
-            description: default,
-            image: default,
-            displayOrder: default,
-            publishStatus: default,
             TestTimestamp.AddHours(1));
 
         result.Should().BeSuccess();
@@ -278,12 +232,9 @@ public sealed class CategoryTests
         var category = CategoryFactory.Create(TestTimestamp);
 
         var result = category.Update(
+            TestTimestamp.AddHours(1),
             name: category.Name,
-            description: default,
-            image: default,
-            displayOrder: category.DisplayOrder,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            displayOrder: category.DisplayOrder);
 
         result.Should().BeSuccess();
         result.Value.Should().BeFalse();
@@ -297,17 +248,13 @@ public sealed class CategoryTests
         var category = CategoryFactory.Create(TestTimestamp, publishStatus: currentStatus);
 
         var result = category.Update(
-            name: default,
-            description: default,
-            image: default,
-            displayOrder: default,
-            publishStatus: attemptedStatus,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            publishStatus: attemptedStatus);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<CategoryErrors.PublishStatusTransitionNotAllowed>();
-        error.CurrentStatus.Should().Be(currentStatus);
-        error.AttemptedStatus.Should().Be(attemptedStatus);
+        error.CurrentStatus.Should().Be(currentStatus.Name);
+        error.AttemptedStatus.Should().Be(attemptedStatus.Name);
     }
 
     [Fact]
@@ -419,7 +366,7 @@ public sealed class CategoryTests
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<CategoryErrors.ParentCategoryIdInvalid>();
-        error.AttemptedId.Should().Be(parentCategoryId);
+        error.Id.Should().Be(parentCategoryId);
     }
 
     [Fact]

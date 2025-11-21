@@ -45,11 +45,17 @@
   <Folder Name="/tests/" />
   <Folder Name="/tests/core/">
     <Project Path="tests/core/ForeverBloom.Application.IntegrationTests/ForeverBloom.Application.IntegrationTests.csproj" />
+    <Project Path="tests/core/ForeverBloom.Application.UnitTests/ForeverBloom.Application.UnitTests.csproj" />
     <Project Path="tests/core/ForeverBloom.Domain.UnitTests/ForeverBloom.Domain.UnitTests.csproj" />
     <Project Path="tests/core/ForeverBloom.SharedKernel.UnitTests/ForeverBloom.SharedKernel.UnitTests.csproj" />
   </Folder>
   <Folder Name="/tests/shared/">
     <Project Path="tests/shared/ForeverBloom.Testing.Integration/ForeverBloom.Testing.Integration.csproj" />
     <Project Path="tests/shared/ForeverBloom.Testing/ForeverBloom.Testing.csproj" />
+  </Folder>
+  <Folder Name="/tests/web/">
+    <Project Path="tests/web/ForeverBloom.WebApi.IntegrationTests/ForeverBloom.WebApi.IntegrationTests.csproj" />
+    <Project Path="tests/web/ForeverBloom.WebApi.UnitTests/ForeverBloom.WebApi.UnitTests.csproj" />
+    <Project Path="tests/web/ForeverBloom.WebUI.RazorPages.UnitTests/ForeverBloom.WebUI.RazorPages.UnitTests.csproj" />
   </Folder>
 </Solution>

@@ -122,10 +122,8 @@ public sealed class HierarchicalPathTests
         var path = HierarchicalPathFactory.Create("electronics");
         var newSlug = SlugFactory.Create("clothing");
 
-        var result = path.WithSlug(newSlug);
+        var newPath = path.WithSlug(newSlug);
 
-        result.Should().BeSuccess();
-        var newPath = result.Value!;
         newPath.Value.Should().Be("clothing");
         newPath.Depth.Should().Be(1);
     }
@@ -136,10 +134,8 @@ public sealed class HierarchicalPathTests
         var path = HierarchicalPathFactory.Create("electronics.computers.laptops");
         var newSlug = SlugFactory.Create("desktops");
 
-        var result = path.WithSlug(newSlug);
+        var newPath = path.WithSlug(newSlug);
 
-        result.Should().BeSuccess();
-        var newPath = result.Value!;
         newPath.Value.Should().Be("electronics.computers.desktops");
         newPath.Depth.Should().Be(3);
     }
@@ -150,10 +146,9 @@ public sealed class HierarchicalPathTests
         var path = HierarchicalPathFactory.Create("a.b.c.d.e");
         var newSlug = SlugFactory.Create("f");
 
-        var result = path.WithSlug(newSlug);
+        var newPath = path.WithSlug(newSlug);
 
-        result.Should().BeSuccess();
-        result.Value!.Depth.Should().Be(path.Depth);
+        newPath.Depth.Should().Be(path.Depth);
     }
 
     [Fact]

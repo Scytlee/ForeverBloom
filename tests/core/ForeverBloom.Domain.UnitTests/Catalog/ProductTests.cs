@@ -20,14 +20,8 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
             categoryId,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
             TestTimestamp);
 
         result.Should().BeSuccess();
@@ -61,15 +55,15 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
+            slug,
+            categoryId,
+            TestTimestamp,
             seoTitle,
             fullDescription,
             metaDescription,
-            slug,
-            categoryId,
             price,
             isFeatured: true,
             availabilityStatus: ProductAvailabilityStatus.Available,
-            TestTimestamp,
             images);
 
         result.Should().BeSuccess();
@@ -96,14 +90,8 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
             categoryId: 1,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
             TestTimestamp,
             images: []);
 
@@ -124,16 +112,10 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
             categoryId: 1,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
             TestTimestamp,
-            images);
+            images: images);
 
         result.Should().BeSuccess();
         var product = result.Value!;
@@ -145,26 +127,20 @@ public sealed class ProductTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100)]
-    public void Create_ShouldFail_ForInvalidCategoryId(long categoryId)
+    public void Create_ShouldFail_ForInvalidCategoryId(long invalidCategoryId)
     {
         var name = ProductNameFactory.Create();
         var slug = SlugFactory.Create();
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
-            categoryId,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
+            invalidCategoryId,
             TestTimestamp);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.CategoryIdInvalid>();
-        error.AttemptedId.Should().Be(categoryId);
+        error.Id.Should().Be(invalidCategoryId);
     }
 
     [Fact]
@@ -179,16 +155,10 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
             categoryId: 1,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
             TestTimestamp,
-            images);
+            images: images);
 
         result.Should().BeFailure();
         result.Should().HaveSingleError<ProductErrors.NoPrimaryImage>();
@@ -207,20 +177,14 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
             categoryId: 1,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
             TestTimestamp,
-            images);
+            images: images);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.MultiplePrimaryImages>();
-        error.PrimaryIndices.Should().BeEquivalentTo([0, 1]);
+        error.Indices.Should().BeEquivalentTo([0, 1]);
     }
 
     [Fact]
@@ -238,20 +202,14 @@ public sealed class ProductTests
 
         var result = Product.Create(
             name,
-            seoTitle: null,
-            fullDescription: null,
-            metaDescription: null,
             slug,
             categoryId: 1,
-            price: null,
-            isFeatured: false,
-            availabilityStatus: ProductAvailabilityStatus.ComingSoon,
             TestTimestamp,
-            images);
+            images: images);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.TooManyImages>();
-        error.AttemptedCount.Should().Be(21);
+        error.Count.Should().Be(21);
     }
 
     [Fact]
@@ -261,16 +219,8 @@ public sealed class ProductTests
         var newName = ProductNameFactory.Create("Updated product");
 
         var result = product.Update(
-            name: newName,
-            seoTitle: default,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
-            price: default,
-            isFeatured: default,
-            availability: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            name: newName);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -284,16 +234,8 @@ public sealed class ProductTests
         var newSeoTitle = SeoTitleFactory.Create("Updated SEO title");
 
         var result = product.Update(
-            name: default,
-            seoTitle: newSeoTitle,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
-            price: default,
-            isFeatured: default,
-            availability: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            seoTitle: newSeoTitle);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -306,16 +248,8 @@ public sealed class ProductTests
         var product = ProductFactory.Create(TestTimestamp, seoTitle: "Test SEO title");
 
         var result = product.Update(
-            name: default,
-            seoTitle: Optional<SeoTitle?>.FromValue(null),
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
-            price: default,
-            isFeatured: default,
-            availability: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            seoTitle: Optional<SeoTitle?>.FromValue(null));
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -330,16 +264,10 @@ public sealed class ProductTests
         var newPrice = MoneyFactory.Create(149.99m);
 
         var result = product.Update(
+            TestTimestamp.AddHours(1),
             name: newName,
-            seoTitle: default,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
             price: newPrice,
-            isFeatured: true,
-            availability: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            isFeatured: true);
 
         result.Should().BeSuccess();
         result.Value.Should().BeTrue();
@@ -354,15 +282,6 @@ public sealed class ProductTests
         var product = ProductFactory.Create(TestTimestamp);
 
         var result = product.Update(
-            name: default,
-            seoTitle: default,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
-            price: default,
-            isFeatured: default,
-            availability: default,
-            publishStatus: default,
             TestTimestamp.AddHours(1));
 
         result.Should().BeSuccess();
@@ -375,16 +294,9 @@ public sealed class ProductTests
         var product = ProductFactory.Create(TestTimestamp);
 
         var result = product.Update(
+            TestTimestamp.AddHours(1),
             name: product.Name,
-            seoTitle: default,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
-            price: default,
-            isFeatured: product.IsFeatured,
-            availability: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            isFeatured: product.IsFeatured);
 
         result.Should().BeSuccess();
         result.Value.Should().BeFalse();
@@ -393,25 +305,17 @@ public sealed class ProductTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void Update_ShouldFail_ForInvalidCategoryId(long categoryId)
+    public void Update_ShouldFail_ForInvalidCategoryId(long invalidCategoryId)
     {
         var product = ProductFactory.Create(TestTimestamp);
 
         var result = product.Update(
-            name: default,
-            seoTitle: default,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: categoryId,
-            price: default,
-            isFeatured: default,
-            availability: default,
-            publishStatus: default,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            categoryId: invalidCategoryId);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.CategoryIdInvalid>();
-        error.AttemptedId.Should().Be(categoryId);
+        error.Id.Should().Be(invalidCategoryId);
     }
 
     [Fact]
@@ -422,21 +326,13 @@ public sealed class ProductTests
         var product = ProductFactory.Create(TestTimestamp, publishStatus: currentStatus);
 
         var result = product.Update(
-            name: default,
-            seoTitle: default,
-            fullDescription: default,
-            metaDescription: default,
-            categoryId: default,
-            price: default,
-            isFeatured: default,
-            availability: default,
-            publishStatus: attemptedStatus,
-            TestTimestamp.AddHours(1));
+            TestTimestamp.AddHours(1),
+            publishStatus: attemptedStatus);
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.PublishStatusTransitionNotAllowed>();
-        error.CurrentStatus.Should().Be(currentStatus);
-        error.AttemptedStatus.Should().Be(attemptedStatus);
+        error.CurrentStatus.Should().Be(currentStatus.Name);
+        error.AttemptedStatus.Should().Be(attemptedStatus.Name);
     }
 
     [Fact]
@@ -518,7 +414,7 @@ public sealed class ProductTests
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.MultiplePrimaryImages>();
-        error.PrimaryIndices.Should().BeEquivalentTo([0, 1]);
+        error.Indices.Should().BeEquivalentTo([0, 1]);
     }
 
     [Fact]
@@ -537,7 +433,7 @@ public sealed class ProductTests
 
         result.Should().BeFailure();
         var error = result.Should().HaveSingleError<ProductErrors.TooManyImages>();
-        error.AttemptedCount.Should().Be(21);
+        error.Count.Should().Be(21);
     }
 
     [Fact]

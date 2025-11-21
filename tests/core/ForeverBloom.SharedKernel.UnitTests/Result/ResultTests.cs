@@ -6,7 +6,7 @@ namespace ForeverBloom.SharedKernel.UnitTests.Result;
 
 public sealed class ResultTests
 {
-    private readonly Error _testError = new() { Code = "TEST", Message = "Test error" };
+    private readonly TestError _testError = new("TEST", "Test error");
 
     [Fact]
     public void Success_ShouldCorrectlyCreateSuccessResult()

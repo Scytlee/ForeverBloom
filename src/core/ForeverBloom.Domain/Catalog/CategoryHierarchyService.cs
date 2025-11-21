@@ -91,7 +91,7 @@ public sealed class CategoryHierarchyService
         if (newParentPath is not null && newParentPath.IsDescendantOf(oldBase, includeSelf: true))
         {
             return Result<bool>.Failure(
-                new CategoryErrors.CircularDependency(category.Id, newParentId!.Value));
+                new CategoryErrors.CircularDependency(newParentId!.Value, category.Id));
         }
 
         var reparentResult = category.Reparent(newParentId, newParentPath, timestamp);

@@ -17,8 +17,8 @@ public sealed class ProductImage
 
     private ProductImage(
         Image image,
-        bool isPrimary,
-        int displayOrder)
+        bool isPrimary = false,
+        int displayOrder = 0)
     {
         Image = image;
         IsPrimary = isPrimary;
@@ -30,8 +30,8 @@ public sealed class ProductImage
     /// </summary>
     public static ProductImage Create(
         Image image,
-        bool isPrimary,
-        int displayOrder)
+        bool isPrimary = false,
+        int displayOrder = 0)
     {
         return new ProductImage(image, isPrimary, displayOrder);
     }
@@ -40,9 +40,9 @@ public sealed class ProductImage
     /// Updates mutable properties of a product image.
     /// </summary>
     public Result Update(
-        Optional<string?> altText,
-        Optional<bool> isPrimary,
-        Optional<int> displayOrder)
+        Optional<string?> altText = default,
+        Optional<bool> isPrimary = default,
+        Optional<int> displayOrder = default)
     {
         if (altText.IsSet)
         {

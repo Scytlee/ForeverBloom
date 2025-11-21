@@ -1,6 +1,7 @@
 using AngleSharp;
 using AngleSharp.Html;
 using AngleSharp.Html.Parser;
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Catalog;
@@ -74,22 +75,22 @@ public sealed record HtmlFragment
 
 public static class HtmlFragmentErrors
 {
-    public sealed record Empty : IError
+    public sealed record Empty : DomainError
     {
-        public string Code => "HtmlFragment.Empty";
-        public string Message => "HTML fragment cannot be empty";
+        public override string Code => "HtmlFragment.Empty";
+        public override string Message => "HTML fragment cannot be empty";
     }
 
-    public sealed record TooLong(string AttemptedValue) : IError
+    public sealed record TooLong([AttemptedValue] string Value) : DomainError
     {
-        public string Code => "HtmlFragment.TooLong";
-        public string Message => $"HTML fragment cannot exceed {MaxLength} characters";
+        public override string Code => "HtmlFragment.TooLong";
+        public override string Message => $"HTML fragment must be at most {MaxLength} characters, but '{Value}' has {Value.Length} characters";
         public static int MaxLength => HtmlFragment.MaxLength;
     }
 
-    public sealed record Malformed(string AttemptedValue) : IError
+    public sealed record Malformed([AttemptedValue] string Value) : DomainError
     {
-        public string Code => "HtmlFragment.Malformed";
-        public string Message => "HTML fragment is malformed or contains invalid HTML structure";
+        public override string Code => "HtmlFragment.Malformed";
+        public override string Message => $"HTML fragment '{Value}' is malformed or contains invalid HTML structure";
     }
 }

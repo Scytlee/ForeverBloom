@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Shared;
@@ -56,22 +57,22 @@ public sealed partial record Slug
 
 public static class SlugErrors
 {
-    public sealed record Empty : IError
+    public sealed record Empty : DomainError
     {
-        public string Code => "Slug.Empty";
-        public string Message => "Slug cannot be empty";
+        public override string Code => "Slug.Empty";
+        public override string Message => "Slug cannot be empty";
     }
 
-    public sealed record TooLong(string AttemptedSlug) : IError
+    public sealed record TooLong([AttemptedValue] string Slug) : DomainError
     {
-        public string Code => "Slug.TooLong";
-        public string Message => $"Slug cannot exceed {MaxLength} characters";
-        public int MaxLength => Slug.MaxLength;
+        public override string Code => "Slug.TooLong";
+        public override string Message => $"Slug must be at most {MaxLength} characters, but '{Slug}' has {Slug.Length} characters";
+        public static int MaxLength => Domain.Shared.Slug.MaxLength;
     }
 
-    public sealed record InvalidFormat(string AttemptedSlug) : IError
+    public sealed record InvalidFormat([AttemptedValue] string Slug) : DomainError
     {
-        public string Code => "Slug.InvalidFormat";
-        public string Message => $"Slug '{AttemptedSlug}' must contain only lowercase letters, numbers, and hyphens";
+        public override string Code => "Slug.InvalidFormat";
+        public override string Message => $"Slug '{Slug}' must contain only lowercase letters, numbers, and hyphens";
     }
 }

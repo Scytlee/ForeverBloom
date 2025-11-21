@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Catalog;
@@ -46,16 +47,16 @@ public sealed record Money
 
 public static class MoneyErrors
 {
-    public sealed record Negative(decimal AttemptedValue) : IError
+    public sealed record Negative([AttemptedValue] decimal Value) : DomainError
     {
-        public string Code => "Money.Negative";
-        public string Message => "Money value cannot be negative";
+        public override string Code => "Money.Negative";
+        public override string Message => $"Money value cannot be negative, but was {Value}";
     }
 
-    public sealed record InvalidPrecision(decimal AttemptedValue) : IError
+    public sealed record InvalidPrecision([AttemptedValue] decimal Value) : DomainError
     {
-        public string Code => "Money.InvalidPrecision";
-        public string Message => $"Money value must be representable with {RequiredDecimalPlaces} decimal places without losing precision";
-        public int RequiredDecimalPlaces => Money.RequiredDecimalPlaces;
+        public override string Code => "Money.InvalidPrecision";
+        public override string Message => $"Money value must be representable with {RequiredDecimalPlaces} decimal places without losing precision, but was {Value}";
+        public static int RequiredDecimalPlaces => Money.RequiredDecimalPlaces;
     }
 }

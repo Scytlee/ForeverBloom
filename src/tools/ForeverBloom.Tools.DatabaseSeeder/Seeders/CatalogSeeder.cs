@@ -7,6 +7,7 @@ using ForeverBloom.Application.Products.Commands.CreateProduct;
 using ForeverBloom.Application.Products.Commands.UpdateProduct;
 using ForeverBloom.Domain.Catalog;
 using ForeverBloom.SharedKernel.Optional;
+using ForeverBloom.Tools.DatabaseSeeder.Extensions;
 using MediatR;
 
 namespace ForeverBloom.Tools.DatabaseSeeder.Seeders;
@@ -61,70 +62,70 @@ public sealed class CatalogSeeder
 
         // Obrazy botaniczne
         var obrazyBotaniczneId = await CreateCategoryAsync(
-            new CreateCategoryCommand(
-                Name: "Obrazy botaniczne",
-                Description: "Moje obrazy powstają pod wpływem chwili, emocji, wdzięczności, głosu serca lub potrzeby wyciszenia. To dar natury dla Twojego domu.",
-                Slug: "obrazy-botaniczne",
-                ImagePath: "/images/uploads/categories/obrazy-botaniczne/banner.avif",
-                ImageAltText: "Obrazy botaniczne",
-                ParentCategoryId: null,
-                DisplayOrder: 1),
+            CreateCategoryCommand.Create(
+                name: "Obrazy botaniczne",
+                slug: "obrazy-botaniczne",
+                description: "Moje obrazy powstają pod wpływem chwili, emocji, wdzięczności, głosu serca lub potrzeby wyciszenia. To dar natury dla Twojego domu.",
+                imagePath: "/images/uploads/categories/obrazy-botaniczne/banner.avif",
+                imageAltText: "Obrazy botaniczne",
+                parentCategoryId: null,
+                displayOrder: 1).ValueOrThrow("Category 'Obrazy botaniczne' creation"),
             cancellationToken);
 
         await PublishCategoryAsync(obrazyBotaniczneId, cancellationToken);
 
         // Obrazy płaskie
         var obrazyPlaskieId = await CreateCategoryAsync(
-            new CreateCategoryCommand(
-                Name: "Obrazy płaskie",
-                Description: "Moje obrazy powstają pod wpływem chwili, emocji, wdzięczności, głosu serca lub potrzeby wyciszenia. To dar natury dla Twojego domu.",
-                Slug: "obrazy-plaskie",
-                ImagePath: "/images/uploads/categories/obrazy-botaniczne/banner.avif",
-                ImageAltText: "Obrazy płaskie",
-                ParentCategoryId: obrazyBotaniczneId,
-                DisplayOrder: 1),
+            CreateCategoryCommand.Create(
+                name: "Obrazy płaskie",
+                slug: "obrazy-plaskie",
+                description: "Moje obrazy powstają pod wpływem chwili, emocji, wdzięczności, głosu serca lub potrzeby wyciszenia. To dar natury dla Twojego domu.",
+                imagePath: "/images/uploads/categories/obrazy-botaniczne/banner.avif",
+                imageAltText: "Obrazy płaskie",
+                parentCategoryId: obrazyBotaniczneId,
+                displayOrder: 1).ValueOrThrow("Category 'Obrazy płaskie' creation"),
             cancellationToken);
 
         await PublishCategoryAsync(obrazyPlaskieId, cancellationToken);
 
         // Obrazy przestrzenne
         var obrazyPrzestrzenneId = await CreateCategoryAsync(
-            new CreateCategoryCommand(
-                Name: "Obrazy przestrzenne",
-                Description: "Moje obrazy powstają pod wpływem chwili, emocji, wdzięczności, głosu serca lub potrzeby wyciszenia. To dar natury dla Twojego domu.",
-                Slug: "obrazy-przestrzenne",
-                ImagePath: "/images/uploads/categories/obrazy-botaniczne/banner.avif",
-                ImageAltText: "Obrazy przestrzenne",
-                ParentCategoryId: obrazyBotaniczneId,
-                DisplayOrder: 2),
+            CreateCategoryCommand.Create(
+                name: "Obrazy przestrzenne",
+                slug: "obrazy-przestrzenne",
+                description: "Moje obrazy powstają pod wpływem chwili, emocji, wdzięczności, głosu serca lub potrzeby wyciszenia. To dar natury dla Twojego domu.",
+                imagePath: "/images/uploads/categories/obrazy-botaniczne/banner.avif",
+                imageAltText: "Obrazy przestrzenne",
+                parentCategoryId: obrazyBotaniczneId,
+                displayOrder: 2).ValueOrThrow("Category 'Obrazy przestrzenne' creation"),
             cancellationToken);
 
         await PublishCategoryAsync(obrazyPrzestrzenneId, cancellationToken);
 
         // Suszone kwiaty
         var suszoneKwiatyId = await CreateCategoryAsync(
-            new CreateCategoryCommand(
-                Name: "Suszone kwiaty",
-                Description: "Najpiękniejsze zestawy kwiatów do Twojego rękodzieła.",
-                Slug: "suszone-kwiaty",
-                ImagePath: "/images/uploads/categories/suszone-kwiaty/banner.avif",
-                ImageAltText: "Suszone kwiaty",
-                ParentCategoryId: null,
-                DisplayOrder: 2),
+            CreateCategoryCommand.Create(
+                name: "Suszone kwiaty",
+                slug: "suszone-kwiaty",
+                description: "Najpiękniejsze zestawy kwiatów do Twojego rękodzieła.",
+                imagePath: "/images/uploads/categories/suszone-kwiaty/banner.avif",
+                imageAltText: "Suszone kwiaty",
+                parentCategoryId: null,
+                displayOrder: 2).ValueOrThrow("Category 'Suszone kwiaty' creation"),
             cancellationToken);
 
         await PublishCategoryAsync(suszoneKwiatyId, cancellationToken);
 
         // Zestawy DIY
         var zestawyDiyId = await CreateCategoryAsync(
-            new CreateCategoryCommand(
-                Name: "Zestawy \"Zrób sobie obraz\"",
-                Description: "Zestawy DIY dla Ciebie do samodzielnego stworzenia kwiatowego obrazu.",
-                Slug: "zestawy-diy-zrob-sobie-obraz",
-                ImagePath: "/images/uploads/categories/zestawy-diy-zrob-sobie-obraz/banner.avif",
-                ImageAltText: "Zestawy \"Zrób sobie obraz\"",
-                ParentCategoryId: null,
-                DisplayOrder: 3),
+            CreateCategoryCommand.Create(
+                name: "Zestawy \"Zrób sobie obraz\"",
+                slug: "zestawy-diy-zrob-sobie-obraz",
+                description: "Zestawy DIY dla Ciebie do samodzielnego stworzenia kwiatowego obrazu.",
+                imagePath: "/images/uploads/categories/zestawy-diy-zrob-sobie-obraz/banner.avif",
+                imageAltText: "Zestawy \"Zrób sobie obraz\"",
+                parentCategoryId: null,
+                displayOrder: 3).ValueOrThrow("Category 'Zestawy DIY' creation"),
             cancellationToken);
 
         await PublishCategoryAsync(zestawyDiyId, cancellationToken);
@@ -135,10 +136,14 @@ public sealed class CatalogSeeder
 
         // Obrazy płaskie — Obraz 2
         var obraz2Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 2",
-                SeoTitle: "Obraz 2",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 2",
+                slug: "obraz-2",
+                categoryId: obrazyPlaskieId,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                isFeatured: false,
+                seoTitle: "Obraz 2",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -162,13 +167,9 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 21 × 29,5 × 4,5 cm. Kompozycja z suszonych kwiatów na szybie, w ramie z drewna sosnowego.",
-                Slug: "obraz-2",
-                CategoryId: obrazyPlaskieId,
-                Price: 200m,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 21 × 29,5 × 4,5 cm. Kompozycja z suszonych kwiatów na szybie, w ramie z drewna sosnowego.",
+                price: 200m,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-plaskie/obraz-2/thumbnail.avif",
@@ -180,17 +181,17 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 2",
                         IsPrimary: false,
                         DisplayOrder: 2)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 2' creation"),
             cancellationToken);
 
         await PublishProductAsync(obraz2Id, cancellationToken);
 
         // Obrazy płaskie — Obraz 3
         var obraz3Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 3",
-                SeoTitle: "Obraz 3",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 3",
+                seoTitle: "Obraz 3",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -214,13 +215,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 23 × 27 cm. Kompozycja z suszonych kwiatów na szybie, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-3",
-                CategoryId: obrazyPlaskieId,
-                Price: null,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 23 × 27 cm. Kompozycja z suszonych kwiatów na szybie, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-3",
+                categoryId: obrazyPlaskieId,
+                price: null,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-plaskie/obraz-3/thumbnail.avif",
@@ -232,17 +233,17 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 3",
                         IsPrimary: false,
                         DisplayOrder: 2)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 3' creation"),
             cancellationToken);
 
         await PublishProductAsync(obraz3Id, cancellationToken);
 
         // Obrazy płaskie — Obraz 4
         var obraz4Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 4",
-                SeoTitle: "Obraz 4",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 4",
+                seoTitle: "Obraz 4",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -266,30 +267,30 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 30 × 42 × 2 cm. Kompozycja z suszonych kwiatów na szybie, w ramie z drewna sosnowego.",
-                Slug: "obraz-4",
-                CategoryId: obrazyPlaskieId,
-                Price: 300m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 30 × 42 × 2 cm. Kompozycja z suszonych kwiatów na szybie, w ramie z drewna sosnowego.",
+                slug: "obraz-4",
+                categoryId: obrazyPlaskieId,
+                price: 300m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-plaskie/obraz-4/thumbnail.avif",
                         AltText: "Obraz 4",
                         IsPrimary: true,
                         DisplayOrder: 1)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 4' creation"),
             cancellationToken);
 
         await PublishProductAsync(obraz4Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 1
         var obraz1Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 1",
-                SeoTitle: "Obraz 1",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 1",
+                seoTitle: "Obraz 1",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -313,13 +314,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 50 × 50 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-1",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 450m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 50 × 50 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-1",
+                categoryId: obrazyPrzestrzenneId,
+                price: 450m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-1/thumbnail.avif",
@@ -336,17 +337,17 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 1",
                         IsPrimary: false,
                         DisplayOrder: 3)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 1' creation"),
             cancellationToken);
 
         await PublishProductAsync(obraz1Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 5
         var obraz5Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 5",
-                SeoTitle: "Obraz 5",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 5",
+                seoTitle: "Obraz 5",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -370,13 +371,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-5",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-5",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-5/thumbnail.avif",
@@ -388,17 +389,17 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 5",
                         IsPrimary: false,
                         DisplayOrder: 2)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 5' creation"),
             cancellationToken);
 
         await PublishProductAsync(obraz5Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 6
         var obraz6Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 6",
-                SeoTitle: "Obraz 6",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 6",
+                seoTitle: "Obraz 6",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -422,13 +423,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-6",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-6",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: false,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-6/thumbnail.avif",
@@ -450,17 +451,17 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 6",
                         IsPrimary: false,
                         DisplayOrder: 4)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 6' creation"),
             cancellationToken);
 
         await PublishProductAsync(obraz6Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 7
         var obraz7Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 7",
-                SeoTitle: "Obraz 7",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 7",
+                seoTitle: "Obraz 7",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -484,13 +485,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 32 × 42 × 3 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-7",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 350m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 32 × 42 × 3 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-7",
+                categoryId: obrazyPrzestrzenneId,
+                price: 350m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-7/thumbnail.avif",
@@ -512,16 +513,16 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 7",
                         IsPrimary: false,
                         DisplayOrder: 4)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 7' creation"),
             cancellationToken);
         await PublishProductAsync(obraz7Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 8
         var obraz8Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 8",
-                SeoTitle: "Obraz 8",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 8",
+                seoTitle: "Obraz 8",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -545,13 +546,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-8",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-8",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-8/thumbnail.avif",
@@ -568,16 +569,16 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 8",
                         IsPrimary: false,
                         DisplayOrder: 3)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 8' creation"),
             cancellationToken);
         await PublishProductAsync(obraz8Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 9
         var obraz9Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 9",
-                SeoTitle: "Obraz 9",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 9",
+                seoTitle: "Obraz 9",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -601,13 +602,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-9",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-9",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-9/thumbnail.avif",
@@ -619,16 +620,16 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 9",
                         IsPrimary: false,
                         DisplayOrder: 2)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 9' creation"),
             cancellationToken);
         await PublishProductAsync(obraz9Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 10
         var obraz10Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 10",
-                SeoTitle: "Obraz 10",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 10",
+                seoTitle: "Obraz 10",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -652,29 +653,29 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-10",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-10",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: false,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-10/thumbnail.avif",
                         AltText: "Obraz 10",
                         IsPrimary: true,
                         DisplayOrder: 1)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 10' creation"),
             cancellationToken);
         await PublishProductAsync(obraz10Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 11
         var obraz11Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 11",
-                SeoTitle: "Obraz 11",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 11",
+                seoTitle: "Obraz 11",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -698,13 +699,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 32 × 42 × 3 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-11",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 350m,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 32 × 42 × 3 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-11",
+                categoryId: obrazyPrzestrzenneId,
+                price: 350m,
+                isFeatured: false,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-11/thumbnail.avif",
@@ -716,16 +717,16 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 11",
                         IsPrimary: false,
                         DisplayOrder: 2)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 11' creation"),
             cancellationToken);
         await PublishProductAsync(obraz11Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 12
         var obraz12Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 12",
-                SeoTitle: "Obraz 12",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 12",
+                seoTitle: "Obraz 12",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -749,13 +750,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-12",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-12",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-12/thumbnail.avif",
@@ -767,16 +768,16 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 12",
                         IsPrimary: false,
                         DisplayOrder: 2)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 12' creation"),
             cancellationToken);
         await PublishProductAsync(obraz12Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 13
         var obraz13Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 13",
-                SeoTitle: "Obraz 13",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 13",
+                seoTitle: "Obraz 13",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -800,29 +801,29 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-13",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 300m,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 25 × 25 × 4,5 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-13",
+                categoryId: obrazyPrzestrzenneId,
+                price: 300m,
+                isFeatured: false,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-13/thumbnail.avif",
                         AltText: "Obraz 13",
                         IsPrimary: true,
                         DisplayOrder: 1)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 13' creation"),
             cancellationToken);
         await PublishProductAsync(obraz13Id, cancellationToken);
 
         // Obrazy przestrzenne — Obraz 14
         var obraz14Id = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Obraz 14",
-                SeoTitle: "Obraz 14",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Obraz 14",
+                seoTitle: "Obraz 14",
+                fullDescription: """
                                   <p>
                                     Zdjęcia przedstawiają kompozycję suszonych kwiatów wykonaną w naszej pracowni.<br>
                                     Oferujemy wykonanie kompozycji inspirowanej pokazanym wzorem — w tej samej ramie, ze wspólnie ustalonym doborem kwiatów w ramach dostępności.
@@ -846,13 +847,13 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstał z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten obraz, potwierdzasz, że jesteś tego świadomy. Aby jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Wymiary: 32 × 42 × 3 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
-                Slug: "obraz-14",
-                CategoryId: obrazyPrzestrzenneId,
-                Price: 350m,
-                IsFeatured: true,
-                AvailabilityStatus: ProductAvailabilityStatus.MadeToOrder,
-                Images:
+                metaDescription: "Wymiary: 32 × 42 × 3 cm. Kompozycja z suszonych kwiatów na płótnie lub papierze, w białej ramie przestrzennej z szybą.",
+                slug: "obraz-14",
+                categoryId: obrazyPrzestrzenneId,
+                price: 350m,
+                isFeatured: true,
+                availabilityStatus: ProductAvailabilityStatus.MadeToOrder.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/obrazy-botaniczne/obrazy-przestrzenne/obraz-14/thumbnail.avif",
@@ -869,16 +870,16 @@ public sealed class CatalogSeeder
                         AltText: "Obraz 14",
                         IsPrimary: false,
                         DisplayOrder: 3)
-                ]),
+                ]).ValueOrThrow("Product 'Obraz 14' creation"),
             cancellationToken);
         await PublishProductAsync(obraz14Id, cancellationToken);
 
         // Suszone kwiaty - Zestaw suszonych kwiatów
         var zestawSuszonychKwiatowId = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Zestaw suszonych kwiatów",
-                SeoTitle: "Zestaw suszonych kwiatów",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Zestaw suszonych kwiatów",
+                seoTitle: "Zestaw suszonych kwiatów",
+                fullDescription: """
                                   <p>
                                       Wszystkie kwiaty wykorzystywane w naszych obrazach suszymy samodzielnie w naszej pracowni.
                                       Pochodzą one z naszego ogrodu działkowego oraz od okolicznych kwiaciarni.
@@ -889,29 +890,29 @@ public sealed class CatalogSeeder
                                       Jeżeli interesuje Cię zakup suszonych kwiatów, a nie ma ich aktualnie w ofercie, to skontaktuj się z nami.
                                   </p>
                                   """,
-                MetaDescription: "Wszystkie kwiaty wykorzystywane w naszych obrazach suszymy samodzielnie w naszej pracowni.",
-                Slug: "zestaw-suszonych-kwiatow",
-                CategoryId: suszoneKwiatyId,
-                Price: null,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.ComingSoon,
-                Images:
+                metaDescription: "Wszystkie kwiaty wykorzystywane w naszych obrazach suszymy samodzielnie w naszej pracowni.",
+                slug: "zestaw-suszonych-kwiatow",
+                categoryId: suszoneKwiatyId,
+                price: null,
+                isFeatured: false,
+                availabilityStatus: ProductAvailabilityStatus.ComingSoon.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/suszone-kwiaty/zestaw-suszonych-kwiatow/thumbnail.avif",
                         AltText: "Zestaw suszonych kwiatów",
                         IsPrimary: true,
                         DisplayOrder: 1)
-                ]),
+                ]).ValueOrThrow("Product 'Zestaw suszonych kwiatów' creation"),
             cancellationToken);
         await PublishProductAsync(zestawSuszonychKwiatowId, cancellationToken);
 
         // Zestawy DIY - Zestaw „Zrób sobie obraz”
         var zestawZrobSobieObrazId = await CreateProductAsync(
-            new CreateProductCommand(
-                Name: "Zestaw \"Zrób sobie obraz\"",
-                SeoTitle: "Zestaw \"Zrób sobie obraz\"",
-                FullDescription: """
+            CreateProductCommand.Create(
+                name: "Zestaw \"Zrób sobie obraz\"",
+                seoTitle: "Zestaw \"Zrób sobie obraz\"",
+                fullDescription: """
                                   <p>
                                     Zestaw „Zrób sobie obraz” do samodzielnej pracy kreatywnej. Idealny na prezent dla Ciebie
                                     lub bliskiej osoby z artystyczną duszą. Praca z kwiatami to kontakt z naturą, a jej
@@ -948,20 +949,20 @@ public sealed class CatalogSeeder
                                     Pamiętaj, że obraz powstanie z materiału roślinnego i organicznego, dlatego z czasem może ulegać zmianom, a jego kolory mogą blaknąć. To naturalny, nieunikniony proces i nie stanowi podstawy do reklamacji. Kupując ten zestaw, potwierdzasz, że jesteś tego świadomy. Aby obraz jak najdłużej zachował naturalny wygląd, eksponuj go z dala od bezpośredniego światła i wilgoci.
                                   </p>
                                   """,
-                MetaDescription: "Zestaw DIY do samodzielnej pracy kreatywnej. Idealny na prezent dla Ciebie lub bliskiej osoby z artystyczną duszą.",
-                Slug: "zestaw-zrob-sobie-obraz",
-                CategoryId: zestawyDiyId,
-                Price: null,
-                IsFeatured: false,
-                AvailabilityStatus: ProductAvailabilityStatus.ComingSoon,
-                Images:
+                metaDescription: "Zestaw DIY do samodzielnej pracy kreatywnej. Idealny na prezent dla Ciebie lub bliskiej osoby z artystyczną duszą.",
+                slug: "zestaw-zrob-sobie-obraz",
+                categoryId: zestawyDiyId,
+                price: null,
+                isFeatured: false,
+                availabilityStatus: ProductAvailabilityStatus.ComingSoon.Name,
+                images:
                 [
                     new CreateProductCommandImage(
                         Source: "/images/uploads/products/zestawy-diy-zrob-sobie-obraz/zestaw-zrob-sobie-obraz/thumbnail.avif",
                         AltText: "Zestaw \"Zrób sobie obraz\"",
                         IsPrimary: true,
                         DisplayOrder: 1)
-                ]),
+                ]).ValueOrThrow("Product 'Zestaw \"Zrób sobie obraz\"' creation"),
             cancellationToken);
         await PublishProductAsync(zestawZrobSobieObrazId, cancellationToken);
 
@@ -990,14 +991,8 @@ public sealed class CatalogSeeder
         _logger.LogInformation("Creating category '{Name}' with slug '{Slug}'", command.Name, command.Slug);
 
         var result = await _sender.Send(command, cancellationToken);
+        var categoryId = result.ValueOrThrow($"Category '{command.Name}' creation").CategoryId;
 
-        if (result.IsFailure)
-        {
-            throw new InvalidOperationException(
-                $"Failed to create category '{command.Name}': {result.Error.Message}");
-        }
-
-        var categoryId = result.Value.CategoryId;
         _logger.LogInformation("Created category '{Name}' with ID {CategoryId}", command.Name, categoryId);
 
         return categoryId;
@@ -1011,23 +1006,13 @@ public sealed class CatalogSeeder
             throw new InvalidOperationException($"Category with ID {categoryId} not found after creation");
         }
 
-        var command = new UpdateCategoryCommand(
-            CategoryId: categoryId,
-            RowVersion: category.RowVersion,
-            Name: Optional<string>.Unset,
-            Description: Optional<string?>.Unset,
-            ImagePath: Optional<string?>.Unset,
-            ImageAltText: Optional<string?>.Unset,
-            DisplayOrder: Optional<int>.Unset,
-            PublishStatus: Optional<PublishStatus>.FromValue(PublishStatus.Published));
+        var command = UpdateCategoryCommand.Create(
+            categoryId: categoryId,
+            rowVersion: category.RowVersion,
+            publishStatus: Optional<string>.FromValue("published"))
+            .ValueOrThrow($"Category '{category.Name}' publish");
 
-        var result = await _sender.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            throw new InvalidOperationException(
-                $"Failed to publish category {categoryId}: {result.Error.Message}");
-        }
+        (await _sender.Send(command, cancellationToken)).ValueOrThrow($"Category '{category.Name}' publish");
 
         _logger.LogInformation("Published category ID {CategoryId}", categoryId);
     }
@@ -1039,14 +1024,8 @@ public sealed class CatalogSeeder
         _logger.LogInformation("Creating product '{Name}' with slug '{Slug}'", command.Name, command.Slug);
 
         var result = await _sender.Send(command, cancellationToken);
+        var productId = result.ValueOrThrow($"Product '{command.Name}' creation").Id;
 
-        if (result.IsFailure)
-        {
-            throw new InvalidOperationException(
-                $"Failed to create product '{command.Name}': {result.Error.Message}");
-        }
-
-        var productId = result.Value.Id;
         _logger.LogInformation("Created product '{Name}' with ID {ProductId}", command.Name, productId);
 
         return productId;
@@ -1060,26 +1039,13 @@ public sealed class CatalogSeeder
             throw new InvalidOperationException($"Product with ID {productId} not found after creation");
         }
 
-        var command = new UpdateProductCommand(
-            ProductId: productId,
-            RowVersion: product.RowVersion,
-            Name: Optional<string>.Unset,
-            SeoTitle: Optional<string?>.Unset,
-            FullDescription: Optional<string?>.Unset,
-            MetaDescription: Optional<string?>.Unset,
-            CategoryId: Optional<long>.Unset,
-            Price: Optional<decimal?>.Unset,
-            IsFeatured: Optional<bool>.Unset,
-            Availability: Optional<ProductAvailabilityStatus>.Unset,
-            PublishStatus: Optional<PublishStatus>.FromValue(PublishStatus.Published));
+        var command = UpdateProductCommand.Create(
+                productId: productId,
+                rowVersion: product.RowVersion,
+                publishStatus: Optional<string>.FromValue(PublishStatus.Published.Name))
+            .ValueOrThrow($"Product '{product.Name}' publish");
 
-        var result = await _sender.Send(command, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            throw new InvalidOperationException(
-                $"Failed to publish product {productId}: {result.Error.Message}");
-        }
+        (await _sender.Send(command, cancellationToken)).ValueOrThrow($"Product '{product.Name}' publish");
 
         _logger.LogInformation("Published product ID {ProductId}", productId);
     }

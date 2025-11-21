@@ -28,11 +28,13 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var postgresConnectionString = configuration.GetConnectionString("Postgres")
-                                       ?? throw new InvalidOperationException("Connection string 'Postgres' not found during DbContext registration.");
-
-        services.AddDbContext<ApplicationDbContext>((_, options) =>
+        services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
         {
+            var config = serviceProvider.GetService<IConfiguration>() ?? configuration;
+
+            var postgresConnectionString = config.GetConnectionString("Postgres")
+                ?? throw new InvalidOperationException("Connection string 'Postgres' not found during DbContext registration.");
+
             options.UseNpgsql(postgresConnectionString, npgsqlOptions =>
             {
                 // Enable retry on failure for transient errors

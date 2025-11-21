@@ -11,7 +11,7 @@ public sealed record BrowseCatalogCategoryTreeRequest
     public long? RootCategoryId { get; init; }
 
     /// <summary>
-    /// Optional maximum depth of the tree to retrieve.
+    /// Optional maximum levels of the tree to retrieve.
     /// </summary>
-    public int? Depth { get; init; }
+    public int? Levels { get; init; }
 }

@@ -249,6 +249,26 @@ footer {
     border-top: 1px solid var(--border-grey);
 }
 
+.footer-credit {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
+
+.footer-credit a {
+    color: #9ca3af;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.footer-credit a:hover {
+    color: #6b7280;
+}
+
+.footer-credit a:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
 /* Social Media Icons (Header, Mobile, Footer) */
 .social-icons a, .social-icons-mobile a {
     display: inline-flex;

@@ -1,4 +1,5 @@
 using ForeverBloom.Domain.Abstractions;
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.Domain.Shared;
 using ForeverBloom.SharedKernel.Optional;
 using ForeverBloom.SharedKernel.Result;
@@ -34,13 +35,13 @@ public sealed class Category : Entity, ISoftDeleteable
 
     private Category(
         SeoTitle name,
-        MetaDescription? description,
         Slug slug,
-        Image? image,
         HierarchicalPath path,
-        long? parentCategoryId,
-        int displayOrder,
-        DateTimeOffset timestamp) : base(timestamp)
+        DateTimeOffset timestamp,
+        MetaDescription? description = null,
+        Image? image = null,
+        long? parentCategoryId = null,
+        int displayOrder = 0) : base(timestamp)
     {
         Name = name;
         Description = description;
@@ -56,13 +57,13 @@ public sealed class Category : Entity, ISoftDeleteable
     /// </summary>
     public static Result<Category> Create(
         SeoTitle name,
-        MetaDescription? description,
         Slug slug,
-        Image? image,
         HierarchicalPath path,
-        long? parentCategoryId,
-        int displayOrder,
-        DateTimeOffset timestamp)
+        DateTimeOffset timestamp,
+        MetaDescription? description = null,
+        Image? image = null,
+        long? parentCategoryId = null,
+        int displayOrder = 0)
     {
         var errors = new List<IError>();
 
@@ -75,13 +76,13 @@ public sealed class Category : Entity, ISoftDeleteable
             errors,
             () => new Category(
                 name,
-                description,
                 slug,
-                image,
                 path,
+                timestamp,
+                description,
+                image,
                 parentCategoryId,
-                displayOrder,
-                timestamp));
+                displayOrder));
     }
 
     /// <summary>
@@ -92,12 +93,12 @@ public sealed class Category : Entity, ISoftDeleteable
     /// or <c>false</c> when the request was a no-op because no fields were set.
     /// </returns>
     public Result<bool> Update(
-        Optional<SeoTitle> name,
-        Optional<MetaDescription?> description,
-        Optional<Image?> image,
-        Optional<int> displayOrder,
-        Optional<PublishStatus> publishStatus,
-        DateTimeOffset timestamp)
+        DateTimeOffset timestamp,
+        Optional<SeoTitle> name = default,
+        Optional<MetaDescription?> description = default,
+        Optional<Image?> image = default,
+        Optional<int> displayOrder = default,
+        Optional<PublishStatus> publishStatus = default)
     {
         // No-op detection: if nothing will actually change, return early
         var hasChanges = (name.IsSet && Name != name.Value) ||
@@ -117,7 +118,7 @@ public sealed class Category : Entity, ISoftDeleteable
         {
             if (!PublishStatus.CanTransitionTo(publishStatus.Value))
             {
-                errors.Add(new CategoryErrors.PublishStatusTransitionNotAllowed(PublishStatus, publishStatus.Value));
+                errors.Add(new CategoryErrors.PublishStatusTransitionNotAllowed(PublishStatus.Name, publishStatus.Value.Name));
             }
         }
 
@@ -164,16 +165,8 @@ public sealed class Category : Entity, ISoftDeleteable
             return Result<bool>.Success(false);
         }
 
-        // Let HierarchicalPath compute the new path with the specified slug
-        var newPathResult = Path.WithSlug(newSlug);
-
-        if (newPathResult.IsFailure)
-        {
-            return Result<bool>.Failure(newPathResult.Error);
-        }
-
         CurrentSlug = newSlug;
-        Path = newPathResult.Value;
+        Path = Path.WithSlug(newSlug);
         UpdatedAt = timestamp;
 
         return Result<bool>.Success(true);
@@ -323,27 +316,150 @@ public sealed class Category : Entity, ISoftDeleteable
 
 public static class CategoryErrors
 {
-    public sealed record ParentCategoryIdInvalid(long AttemptedId) : IError
+    public sealed record ParentCategoryIdInvalid([AttemptedValue] long Id) : DomainError
     {
-        public string Code => "Category.ParentCategoryIdInvalid";
-        public string Message => "Parent category ID must be greater than 0";
+        public override string Code => "Category.ParentCategoryIdInvalid";
+        public override string Message => $"Parent category ID must be greater than 0, but was {Id}";
     }
 
-    public sealed record PublishStatusTransitionNotAllowed(PublishStatus CurrentStatus, PublishStatus AttemptedStatus) : IError
+    public sealed record PublishStatusTransitionNotAllowed([CurrentValue] string CurrentStatus, [AttemptedValue] string AttemptedStatus) : DomainError
     {
-        public string Code => "Category.PublishStatusTransitionNotAllowed";
-        public string Message => $"Cannot transition publish status with code '{CurrentStatus.Code}' to '{AttemptedStatus.Code}'.";
+        public override string Code => "Category.PublishStatusTransitionNotAllowed";
+        public override string Message => $"Cannot transition publish status from '{CurrentStatus}' to '{AttemptedStatus}'";
     }
 
-    public sealed record CannotBeOwnParent(long CategoryId) : IError
+    public sealed record CannotBeOwnParent([AttemptedValue] long CategoryId) : DomainError
     {
-        public string Code => "Category.CannotBeOwnParent";
-        public string Message => $"Category with ID {CategoryId} cannot be its own parent";
+        public override string Code => "Category.CannotBeOwnParent";
+        public override string Message => $"Category with ID {CategoryId} cannot be its own parent";
     }
 
-    public sealed record CircularDependency(long CategoryId, long AttemptedParentId) : IError
+    public sealed record CircularDependency([AttemptedValue] long ParentId, long CategoryId) : DomainError
     {
-        public string Code => "Category.CircularDependency";
-        public string Message => $"Cannot set category {AttemptedParentId} as parent of category {CategoryId} because it would create a circular dependency";
+        public override string Code => "Category.CircularDependency";
+        public override string Message => $"Cannot set category {ParentId} as parent of category {CategoryId} because it would create a circular dependency";
+    }
+
+    /// <summary>
+    /// Error indicating an invalid category ID.
+    /// </summary>
+    public sealed record CategoryIdInvalid([AttemptedValue] long Id) : DomainError
+    {
+        public override string Code => "Category.CategoryIdInvalid";
+        public override string Message => $"Category ID must be greater than 0, but was {Id}";
+    }
+
+    /// <summary>
+    /// Error indicating a slug is already in use and cannot be assigned to a new category.
+    /// </summary>
+    public sealed record SlugNotAvailable([AttemptedValue] string Slug) : DomainError
+    {
+        public override string Code => "Category.SlugNotAvailable";
+        public override string Message => $"The slug '{Slug}' is already in use";
+    }
+
+    /// <summary>
+    /// Error raised when the specified parent category does not exist.
+    /// </summary>
+    public sealed record ParentNotFound([AttemptedValue] long ParentCategoryId) : DomainError
+    {
+        public override string Code => "Category.ParentNotFound";
+        public override string Message => $"Parent category with ID {ParentCategoryId} was not found";
+    }
+
+    /// <summary>
+    /// Error raised when a sibling category already uses the provided name.
+    /// </summary>
+    public sealed record NameNotUniqueWithinParent([AttemptedValue] string Name, long? ParentCategoryId) : DomainError
+    {
+        public override string Code => "Category.NameNotUniqueWithinParent";
+        public override string Message => ParentCategoryId is null
+            ? $"A root category named '{Name}' already exists"
+            : $"A category named '{Name}' already exists under parent ID {ParentCategoryId}";
+    }
+
+    /// <summary>
+    /// Error raised when attempting to perform an operation on a category with too many descendants.
+    /// </summary>
+    public sealed record TooManyDescendants([AttemptedValue] long CategoryId) : DomainError
+    {
+        public override string Code => "Category.TooManyDescendants";
+        public override string Message => $"Cannot perform the operation on category {CategoryId} because it has more than {MaximumAllowedDescendants} descendants";
+        public static int MaximumAllowedDescendants => Category.DescendantLimitOnUpdate;
+    }
+
+    /// <summary>
+    /// Error raised when attempting to restore a category that has archived ancestors.
+    /// </summary>
+    public sealed record HasArchivedAncestors([AttemptedValue] long CategoryId) : DomainError
+    {
+        public override string Code => "Category.HasArchivedAncestors";
+        public override string Message => $"Cannot restore category {CategoryId} because it has one or more archived ancestors";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because it is not archived.
+    /// </summary>
+    public sealed record CannotDeleteNotArchived([AttemptedValue] long CategoryId) : DomainError
+    {
+        public override string Code => "Category.CannotDeleteNotArchived";
+        public override string Message => $"Category with ID {CategoryId} must be archived before it can be deleted";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because insufficient time has passed since archival.
+    /// </summary>
+    public sealed record CannotDeleteTooSoon(
+        [AttemptedValue] long CategoryId,
+        DateTimeOffset ArchivedAt,
+        DateTimeOffset EligibleAt) : DomainError
+    {
+        public override string Code => "Category.CannotDeleteTooSoon";
+        public override string Message => $"Category with ID {CategoryId} was archived at {ArchivedAt:u} and can be deleted after {EligibleAt:u}";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because it has children categories.
+    /// </summary>
+    public sealed record CannotDeleteHasChildren([AttemptedValue] long CategoryId) : DomainError
+    {
+        public override string Code => "Category.CannotDeleteHasChildren";
+        public override string Message => $"Cannot delete category with ID {CategoryId} because it has children";
+    }
+
+    /// <summary>
+    /// Error indicating a category cannot be deleted because it has products referencing it.
+    /// </summary>
+    public sealed record CannotDeleteHasProducts([AttemptedValue] long CategoryId) : DomainError
+    {
+        public override string Code => "Category.CannotDeleteHasProducts";
+        public override string Message => $"Cannot delete category with ID {CategoryId} because it has products referencing it";
+    }
+
+    /// <summary>
+    /// Error indicating a category was not found via slug lookup.
+    /// </summary>
+    public sealed record NotFoundBySlug([AttemptedValue] string Slug) : DomainError
+    {
+        public override string Code => "Category.NotFoundBySlug";
+        public override string Message => $"Category with slug '{Slug}' was not found";
+    }
+
+    /// <summary>
+    /// Error indicating a category was not found via ID lookup.
+    /// </summary>
+    public sealed record NotFoundById([AttemptedValue] long Id) : DomainError
+    {
+        public override string Code => "Category.NotFoundById";
+        public override string Message => $"Category with ID {Id} was not found";
+    }
+
+    /// <summary>
+    /// Error indicating the category slug has changed to a new value.
+    /// </summary>
+    public sealed record SlugChanged([AttemptedValue] string AttemptedSlug, [CurrentValue] string CurrentSlug) : DomainError
+    {
+        public override string Code => "Category.SlugChanged";
+        public override string Message => $"The category slug has changed from '{AttemptedSlug}' to '{CurrentSlug}'";
     }
 }

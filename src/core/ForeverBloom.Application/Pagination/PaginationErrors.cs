@@ -1,20 +1,21 @@
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Pagination;
 
 public static class PaginationErrors
 {
-    public sealed record InvalidPageNumber(int AttemptedPageNumber) : IError
+    public sealed record InvalidPageNumber([AttemptedValue] int PageNumber) : ApplicationError
     {
-        public string Code => "Pagination.InvalidPageNumber";
-        public string Message => $"Provided page number '{AttemptedPageNumber}' is invalid.";
+        public override string Code => "Pagination.InvalidPageNumber";
+        public override string Message => $"Page number {PageNumber} is invalid";
     }
 
-    public sealed record InvalidPageSize(int AttemptedPageSize) : IError
+    public sealed record InvalidPageSize([AttemptedValue] int PageSize) : ApplicationError
     {
-        public string Code => "Pagination.InvalidPageSize";
-        public string Message => $"Provided page size '{AttemptedPageSize}' is invalid or out of range.";
-        public int MinimumPageSize => PaginationConstants.MinimumPageSize;
-        public int MaximumPageSize => PaginationConstants.MaximumPageSize;
+        public override string Code => "Pagination.InvalidPageSize";
+        public override string Message => $"Page size must be between {MinimumPageSize} and {MaximumPageSize}, but was {PageSize}";
+        public static int MinimumPageSize => PaginationConstants.MinimumPageSize;
+        public static int MaximumPageSize => PaginationConstants.MaximumPageSize;
     }
 }

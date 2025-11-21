@@ -18,7 +18,7 @@ internal sealed class CategoryEndpoints : EndpointsBase<CategoryEndpoints>, ICat
 
         var requestUri = "categories/tree"
             .SetQueryParam("RootCategoryId", request.RootCategoryId, NullValueHandling.Ignore)
-            .SetQueryParam("Depth", request.Depth, NullValueHandling.Ignore)
+            .SetQueryParam("Levels", request.Levels, NullValueHandling.Ignore)
             .ToUri();
 
         Logger.LogDebug("Fetching catalog category tree from {RequestUri}", requestUri);

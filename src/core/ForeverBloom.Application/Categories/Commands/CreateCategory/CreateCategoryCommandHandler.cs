@@ -31,14 +31,6 @@ internal sealed class CreateCategoryCommandHandler : ICommandHandler<CreateCateg
         CreateCategoryCommand command,
         CancellationToken cancellationToken)
     {
-        var valueObjectsResult = command.AssembleValueObjects();
-        if (valueObjectsResult.IsFailure)
-        {
-            return Result<CreateCategoryResult>.Failure(valueObjectsResult.Error);
-        }
-
-        var valueObjects = valueObjectsResult.Value;
-
         HierarchicalPath? parentPath = null;
         if (command.ParentCategoryId.HasValue)
         {
@@ -50,43 +42,43 @@ internal sealed class CreateCategoryCommandHandler : ICommandHandler<CreateCateg
         }
 
         var pathResult = parentPath is null
-                ? HierarchicalPath.FromString(valueObjects.Slug)
-                : HierarchicalPath.FromParent(parentPath, valueObjects.Slug);
+                ? HierarchicalPath.FromSlugs(command.Slug)
+                : HierarchicalPath.FromParent(parentPath, command.Slug);
         if (pathResult.IsFailure)
         {
             return Result<CreateCategoryResult>.Failure(pathResult.Error);
         }
 
         var slugAvailable = await _slugRegistrationService.IsSlugAvailableAsync(
-            valueObjects.Slug,
+            command.Slug,
             cancellationToken);
 
         if (!slugAvailable)
         {
             return Result<CreateCategoryResult>.Failure(
-                new CategoryErrors.SlugNotAvailable(valueObjects.Slug.Value));
+                new CategoryErrors.SlugNotAvailable(command.Slug.Value));
         }
 
         var siblingExists = await _categoryRepository.NameExistsWithinParentAsync(
-            valueObjects.Name,
+            command.Name,
             command.ParentCategoryId,
             cancellationToken);
 
         if (siblingExists)
         {
             return Result<CreateCategoryResult>.Failure(
-                new CategoryErrors.NameNotUniqueWithinParent(valueObjects.Name.Value, command.ParentCategoryId));
+                new CategoryErrors.NameNotUniqueWithinParent(command.Name.Value, command.ParentCategoryId));
         }
 
         var categoryResult = Category.Create(
-            name: valueObjects.Name,
-            description: valueObjects.Description,
-            slug: valueObjects.Slug,
-            image: valueObjects.Image,
+            name: command.Name,
+            slug: command.Slug,
             path: pathResult.Value,
+            timestamp: _timeProvider.UtcNow,
+            description: command.Description,
+            image: command.Image,
             parentCategoryId: command.ParentCategoryId,
-            displayOrder: command.DisplayOrder,
-            timestamp: _timeProvider.UtcNow);
+            displayOrder: command.DisplayOrder);
 
         if (categoryResult.IsFailure)
         {

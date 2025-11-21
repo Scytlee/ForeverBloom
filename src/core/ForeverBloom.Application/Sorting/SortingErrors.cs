@@ -1,24 +1,38 @@
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Sorting;
 
 public static class SortingErrors
 {
-    public sealed record InvalidSortStrategy(string AttemptedStrategyId, string[] AllowedStrategies) : IError
+    public sealed record InvalidSortFormat([AttemptedValue] string Value) : ApplicationError
     {
-        public string Code => "Sorting.InvalidSortStrategy";
-        public string Message => $"Provided sort strategy '{AttemptedStrategyId}' is invalid.";
+        public override string Code => "Sorting.InvalidSortFormat";
+        public override string Message => $"Each sort property must be in the format 'property:direction' (e.g., 'name:asc'), but received '{Value}'";
     }
 
-    public sealed record InvalidSortProperty(string AttemptedPropertyName, string[] AllowedProperties) : IError
+    public sealed record InvalidSortDirection([AttemptedValue] string Direction) : ApplicationError
     {
-        public string Code => "Sorting.InvalidSortProperty";
-        public string Message => $"Provided sort property '{AttemptedPropertyName}' is invalid.";
+        public override string Code => "Sorting.InvalidSortDirection";
+        public override string Message => $"Sort direction must be either 'asc' or 'desc', but received '{Direction}'";
+        public static readonly string[] ValidDirections = ["asc", "desc"];
     }
 
-    public sealed record DuplicateSortProperty(string AttemptedPropertyName, int[] PropertyIndices) : IError
+    public sealed record InvalidSortStrategy([AttemptedValue] string StrategyId, string[] AllowedStrategies) : ApplicationError
     {
-        public string Code => "Sorting.DuplicateSortProperty";
-        public string Message => $"Sort property '{AttemptedPropertyName}' was provided multiple times at indices {string.Join(", ", PropertyIndices)}";
+        public override string Code => "Sorting.InvalidSortStrategy";
+        public override string Message => $"Sort strategy '{StrategyId}' is invalid";
+    }
+
+    public sealed record InvalidSortProperty([AttemptedValue] string PropertyName, string[] AllowedProperties) : ApplicationError
+    {
+        public override string Code => "Sorting.InvalidSortProperty";
+        public override string Message => $"Sort property '{PropertyName}' is invalid";
+    }
+
+    public sealed record DuplicateSortProperty([AttemptedValue] string PropertyName, int[] PropertyIndices) : ApplicationError
+    {
+        public override string Code => "Sorting.DuplicateSortProperty";
+        public override string Message => $"Sort property '{PropertyName}' was provided multiple times at indices {string.Join(", ", PropertyIndices)}";
     }
 }

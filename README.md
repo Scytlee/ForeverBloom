@@ -1,6 +1,6 @@
 # ForeverBloom—PCA + DDD refactor
 
-> **Branch snapshot:** 2025-11-11
+> **Branch snapshot:** 2025-11-21
 
 This branch is an ongoing refactor of the ForeverBloom system into a pragmatic Clean Architecture solution with rich domain.
 The refactor also comes with an upgrade to .NET 10 and Aspire 13.

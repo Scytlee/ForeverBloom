@@ -1,11 +1,10 @@
-using ForeverBloom.Application.Abstractions;
 using ForeverBloom.Application.Abstractions.Data;
 using ForeverBloom.Application.Abstractions.Data.Repositories;
+using ForeverBloom.Application.Abstractions.Errors;
 using ForeverBloom.Application.Abstractions.Requests;
 using ForeverBloom.Application.Abstractions.SlugRegistry;
 using ForeverBloom.Application.Abstractions.Time;
 using ForeverBloom.Domain.Catalog;
-using ForeverBloom.Domain.Shared;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Application.Categories.Commands.ReslugCategory;
@@ -37,14 +36,6 @@ internal sealed class ReslugCategoryCommandHandler
         ReslugCategoryCommand command,
         CancellationToken cancellationToken)
     {
-        var slugResult = Slug.Create(command.NewSlug);
-        if (slugResult.IsFailure)
-        {
-            return Result<ReslugCategoryResult>.Failure(slugResult.Error);
-        }
-
-        var newSlug = slugResult.Value;
-
         var category = await _categoryRepository.GetByIdAsync(command.CategoryId, cancellationToken);
         if (category is null)
         {
@@ -58,7 +49,7 @@ internal sealed class ReslugCategoryCommandHandler
         }
 
         // No-op: Subject category already has the provided slug
-        if (category.CurrentSlug == newSlug)
+        if (category.CurrentSlug == command.NewSlug)
         {
             return Result<ReslugCategoryResult>.Success(
                 new ReslugCategoryResult(
@@ -71,7 +62,7 @@ internal sealed class ReslugCategoryCommandHandler
         // Slug must be available for this category to use
         // (either unregistered, or registered to this category)
         var isAvailable = await _slugRegistrationService.IsSlugAvailableForEntityAsync(
-            newSlug,
+            command.NewSlug,
             EntityType.Category,
             category.Id,
             cancellationToken);
@@ -79,7 +70,7 @@ internal sealed class ReslugCategoryCommandHandler
         if (!isAvailable)
         {
             return Result<ReslugCategoryResult>.Failure(
-                new CategoryErrors.SlugNotAvailable(newSlug.Value));
+                new CategoryErrors.SlugNotAvailable(command.NewSlug.Value));
         }
 
         // Fetch descendants up to the maximum + 1 to ensure we don't exceed the limit
@@ -99,7 +90,7 @@ internal sealed class ReslugCategoryCommandHandler
         // Domain service handles slug change and descendant rebasing
         var changeSlugResult = _hierarchyService.ChangeCategorySlugAndRebaseDescendants(
             category,
-            newSlug,
+            command.NewSlug,
             descendants,
             _timeProvider.UtcNow);
 
@@ -117,7 +108,7 @@ internal sealed class ReslugCategoryCommandHandler
             await _slugRegistrationService.RegisterSlugAsync(
                 EntityType.Category,
                 category.Id,
-                newSlug,
+                command.NewSlug,
                 cancellationToken);
         }
 

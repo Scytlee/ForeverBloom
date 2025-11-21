@@ -26,7 +26,7 @@ public class CatalogPageModel : BasePageModel
 
         try
         {
-            var categoryTreeRequest = new BrowseCatalogCategoryTreeRequest { Depth = 1 };
+            var categoryTreeRequest = new BrowseCatalogCategoryTreeRequest { Levels = 1 };
             var categoryTreeResponse = await _apiClient.Categories.BrowseCatalogCategoryTreeAsync(categoryTreeRequest);
             if (!categoryTreeResponse.IsSuccess)
             {

@@ -1,4 +1,5 @@
 using ForeverBloom.Persistence.Context;
+using ForeverBloom.Testing.BaseTestClasses;
 using ForeverBloom.Testing.Integration.Fixtures;
 using MediatR;
 using Xunit;
@@ -8,18 +9,12 @@ namespace ForeverBloom.Testing.Integration.BaseTestClasses;
 /// <summary>
 /// Provides per-test lifetime management for <see cref="ApplicationTestFixture"/>.
 /// </summary>
-public abstract class ApplicationIntegrationTestBase : IAsyncLifetime
+public abstract class ApplicationIntegrationTestBase : TestBase, IAsyncLifetime
 {
     private ApplicationTestFixture? _fixture;
 
-    protected Guid TestId { get; } = Guid.NewGuid();
-
     protected ApplicationTestFixture Fixture =>
         _fixture ?? throw new InvalidOperationException("Fixture is not initialized.");
-
-    protected ApplicationDbContext DbContext => Fixture.DbContext;
-
-    protected ISender Sender => Fixture.Sender;
 
     public async ValueTask InitializeAsync()
     {
@@ -36,9 +31,40 @@ public abstract class ApplicationIntegrationTestBase : IAsyncLifetime
         }
     }
 
-    protected Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+    protected Task<TResponse> SendAsync<TResponse>(
+        IRequest<TResponse> request,
+        DateTimeOffset? actionTimestamp = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return Sender.Send(request, cancellationToken);
+        return Fixture.SendAsync(request, actionTimestamp, cancellationToken);
+    }
+
+    protected Task ExecuteDbContextAsync(
+        Func<ApplicationDbContext, CancellationToken, Task> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        return Fixture.ExecuteDbContextAsync(operation, CancellationToken);
+    }
+
+    protected Task ExecuteDbContextAsync(
+        Func<ApplicationDbContext, Task> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        return Fixture.ExecuteDbContextAsync(operation, CancellationToken);
+    }
+
+    protected Task<TResult> ExecuteDbContextAsync<TResult>(
+        Func<ApplicationDbContext, CancellationToken, Task<TResult>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        return Fixture.ExecuteDbContextAsync(operation, CancellationToken);
+    }
+
+    protected Task<TResult> ExecuteDbContextAsync<TResult>(
+        Func<ApplicationDbContext, Task<TResult>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        return Fixture.ExecuteDbContextAsync(operation, CancellationToken);
     }
 }

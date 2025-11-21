@@ -1,3 +1,4 @@
+using ForeverBloom.Domain.Abstractions.Errors;
 using ForeverBloom.SharedKernel.Result;
 
 namespace ForeverBloom.Domain.Shared;
@@ -38,16 +39,16 @@ public sealed record SeoTitle
 
 public static class SeoTitleErrors
 {
-    public sealed record Empty : IError
+    public sealed record Empty : DomainError
     {
-        public string Code => "SeoTitle.Empty";
-        public string Message => "SEO title cannot be empty";
+        public override string Code => "SeoTitle.Empty";
+        public override string Message => "SEO title cannot be empty";
     }
 
-    public sealed record TooLong(string AttemptedValue) : IError
+    public sealed record TooLong([AttemptedValue] string Value) : DomainError
     {
-        public string Code => "SeoTitle.TooLong";
-        public string Message => $"SEO title cannot exceed {MaxLength} characters";
-        public int MaxLength => SeoTitle.MaxLength;
+        public override string Code => "SeoTitle.TooLong";
+        public override string Message => $"SEO title must be at most {MaxLength} characters, but '{Value}' has {Value.Length} characters";
+        public static int MaxLength => SeoTitle.MaxLength;
     }
 }

@@ -1,9 +1,10 @@
 using ForeverBloom.Application;
+using ForeverBloom.Application.Abstractions.Time;
 using ForeverBloom.Persistence;
 using ForeverBloom.Persistence.Context;
-using ForeverBloom.Testing.Integration.Database;
 using ForeverBloom.Testing.Integration.DependencyInjection;
 using ForeverBloom.Testing.Integration.Infrastructure;
+using ForeverBloom.Testing.Integration.Time;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,32 +19,50 @@ namespace ForeverBloom.Testing.Integration.Fixtures;
 /// </summary>
 public sealed class ApplicationTestFixture : IAsyncLifetime
 {
-    private readonly Guid _fixtureId = Guid.NewGuid();
+    internal static readonly DateTimeOffset InitialTimeSeed = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
+    private readonly bool _ownsEnvironment;
+
+    private IntegrationTestEnvironment? _environment;
     private ServiceProvider? _serviceProvider;
-    private TestDatabaseInstance? _databaseInstance;
-    private bool _gateAcquired;
+
+    private IntegrationTestEnvironment Environment =>
+        _environment ?? throw new InvalidOperationException("Test environment is not available.");
+
+    public ApplicationTestFixture()
+    {
+        _ownsEnvironment = true;
+    }
+
+    internal ApplicationTestFixture(IntegrationTestEnvironment sharedEnvironment)
+    {
+        _environment = sharedEnvironment ?? throw new ArgumentNullException(nameof(sharedEnvironment));
+        _ownsEnvironment = false;
+    }
 
     public IServiceProvider Services =>
         _serviceProvider ?? throw new InvalidOperationException("Services are not available before initialization.");
 
-    public ApplicationDbContext DbContext => Services.GetRequiredService<ApplicationDbContext>();
-
-    public ISender Sender => Services.GetRequiredService<ISender>();
+    public TestTimeProvider TimeProvider => Environment.TimeProvider;
 
     public async ValueTask InitializeAsync()
     {
-        await PostgresTemplateDatabaseLifetime.EnsureInitializedAsync(
-            MigrateTemplateDatabaseAsync,
-            CancellationToken.None);
+        if (_ownsEnvironment && _environment is null)
+        {
+            _environment = await IntegrationTestEnvironment.CreateAsync(
+                MigrateTemplateDatabaseAsync,
+                InitialTimeSeed,
+                CancellationToken.None);
+        }
 
-        await TestInfrastructureConcurrencyGate.WaitAsync();
-        _gateAcquired = true;
+        if (_environment is null)
+        {
+            throw new InvalidOperationException("Integration test environment must be provided before initialization.");
+        }
 
         try
         {
-            _databaseInstance = await PostgresTemplateDatabaseLifetime.Manager.CreateDatabaseAsync(_fixtureId);
-            _serviceProvider = BuildServiceProvider(_databaseInstance.ConnectionString);
+            _serviceProvider = BuildServiceProvider(Environment);
         }
         catch
         {
@@ -57,37 +76,100 @@ public sealed class ApplicationTestFixture : IAsyncLifetime
         await CleanupAsync();
     }
 
-    public Task<TResult> SendAsync<TResult>(IRequest<TResult> request, CancellationToken cancellationToken = default)
+    public async Task<TResult> SendAsync<TResult>(
+        IRequest<TResult> request,
+        DateTimeOffset? actionTimestamp = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return Sender.Send(request, cancellationToken);
+
+        await using var scope = Services.CreateAsyncScope();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
+        var autoAdvancePreAction = Environment.TimeProvider.AutoAdvance;
+
+        try
+        {
+            if (actionTimestamp is not null && actionTimestamp != DateTimeOffset.MinValue)
+            {
+                Environment.TimeProvider.FreezeAt(actionTimestamp.Value);
+            }
+            return await sender.Send(request, cancellationToken);
+        }
+        finally
+        {
+            if (autoAdvancePreAction)
+            {
+                Environment.TimeProvider.Unfreeze();
+            }
+        }
     }
 
-    private static ServiceProvider BuildServiceProvider(string connectionString)
+    public async Task ExecuteDbContextAsync(
+        Func<ApplicationDbContext, CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        await using var scope = Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        await operation(dbContext, cancellationToken);
+    }
+
+    public Task ExecuteDbContextAsync(
+        Func<ApplicationDbContext, Task> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        return ExecuteDbContextAsync((dbContext, _) => operation(dbContext), cancellationToken);
+    }
+
+    public async Task<TResult> ExecuteDbContextAsync<TResult>(
+        Func<ApplicationDbContext, CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        await using var scope = Services.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        return await operation(dbContext, cancellationToken);
+    }
+
+    public Task<TResult> ExecuteDbContextAsync<TResult>(
+        Func<ApplicationDbContext, Task<TResult>> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        return ExecuteDbContextAsync((dbContext, _) => operation(dbContext), cancellationToken);
+    }
+
+    private static ServiceProvider BuildServiceProvider(IntegrationTestEnvironment environment)
     {
         var services = new ServiceCollection();
 
         services.AddLogging();
 
-        var configurationValues = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["ConnectionStrings:Postgres"] = connectionString
-        };
-
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(configurationValues)
+            .AddInMemoryCollection(environment.ConfigurationValues)
             .Build();
 
         services.AddSingleton<IConfiguration>(configuration);
 
         services.AddApplication();
         services.AddTestInfrastructure();
+        services.AddSingleton<ITimeProvider>(environment.TimeProvider);
         services.AddPersistence(configuration);
 
-        return services.BuildServiceProvider();
+        return services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes = true,
+            ValidateOnBuild = true
+        });
     }
 
-    private static async Task MigrateTemplateDatabaseAsync(string connectionString, CancellationToken cancellationToken)
+    internal static async Task MigrateTemplateDatabaseAsync(string connectionString, CancellationToken cancellationToken)
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseNpgsql(connectionString, ConfigureNpgsqlOptions)
@@ -113,16 +195,11 @@ public sealed class ApplicationTestFixture : IAsyncLifetime
             _serviceProvider = null;
         }
 
-        if (_databaseInstance is not null)
+        if (_environment is not null && _ownsEnvironment)
         {
-            await PostgresTemplateDatabaseLifetime.Manager.DropDatabaseAsync(_databaseInstance.Name);
-            _databaseInstance = null;
+            await _environment.DisposeAsync();
         }
 
-        if (_gateAcquired)
-        {
-            TestInfrastructureConcurrencyGate.Release();
-            _gateAcquired = false;
-        }
+        _environment = null;
     }
 }

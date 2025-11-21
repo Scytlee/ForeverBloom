@@ -13,7 +13,7 @@ public sealed class ProductImageTests
     {
         var image = ImageFactory.Create();
         const bool isPrimary = true;
-        const int displayOrder = 0;
+        const int displayOrder = 3;
 
         var productImage = ProductImage.Create(image, isPrimary, displayOrder);
 

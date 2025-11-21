@@ -26,4 +26,8 @@
     <Exec Command="libman restore --verbosity quiet" StandardOutputImportance="Low" />
   </Target>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(AssemblyName).UnitTests" />
+  </ItemGroup>
+
 </Project>
